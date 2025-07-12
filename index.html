@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Consistent Hash Matcher</title>
+  <meta charset="UTF-8">
+  <title>Simple Consistent Hashing</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
     textarea, input { width: 100%; margin-bottom: 10px; padding: 8px; font-size: 14px; }
@@ -11,18 +11,18 @@
   </style>
 </head>
 <body>
-  <h2>Consistent Hash2: Match Target Value</h2>
+  <h2>Hash Choo3333ser</h2>
 
   <label>List of Values (one per line):</label>
-  <textarea id="values" rows="6" placeholder="server1&#10;server2&#10;server3"></textarea>
+  <textarea id="values" rows="6" placeholder="nodeA&#10;nodeB&#10;nodeC"></textarea>
 
-  <label>Single Value to Test:</label>
-  <input type="text" id="target" placeholder="e.g. server2" />
+  <label>Single Value:</label>
+  <input type="text" id="singleValue" placeholder="e.g. nodeB" />
 
   <label>Salt:</label>
   <input type="text" id="salt" placeholder="Optional salt" />
 
-  <button onclick="checkConsistentHash()">Check</button>
+  <button onclick="runHashMatch()">Check</button>
 
   <div id="result"></div>
 
@@ -30,42 +30,37 @@
     async function sha1Hex(str) {
       const buffer = new TextEncoder().encode(str);
       const hash = await crypto.subtle.digest("SHA-1", buffer);
-      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+      const byteArray = new Uint8Array(hash);
+      // Convert to integer (first 4 bytes only for simplicity)
+      return (
+        (byteArray[0] << 24) |
+        (byteArray[1] << 16) |
+        (byteArray[2] << 8) |
+        (byteArray[3])
+      ) >>> 0; // unsigned
     }
 
-    async function buildHashRing(values, salt) {
-      const ring = [];
-      for (const val of values) {
-        const hash = await sha1Hex(salt + val);
-        ring.push({ value: val, hash });
-      }
-      ring.sort((a, b) => a.hash.localeCompare(b.hash));
-      return ring;
-    }
-
-    async function findAssignedValue(ring, key, salt) {
-      const keyHash = await sha1Hex(salt + key);
-      for (const entry of ring) {
-        if (keyHash <= entry.hash) return entry.value;
-      }
-      return ring[0].value; // wrap around
-    }
-
-    async function checkConsistentHash() {
-      const values = document.getElementById("values").value.split("\n").map(v => v.trim()).filter(v => v);
-      const target = document.getElementById("target").value.trim();
+    async function runHashMatch() {
+      const values = document.getElementById("values").value
+        .split("\n")
+        .map(v => v.trim())
+        .filter(v => v);
+      const singleValue = document.getElementById("singleValue").value.trim();
       const salt = document.getElementById("salt").value.trim();
 
-      if (!values.length || !target) {
-        document.getElementById("result").innerText = "Please enter both list and single value.";
+      if (!values.length || !singleValue) {
+        document.getElementById("result").innerText = "Please enter both the list and single value.";
         return;
       }
 
-      const ring = await buildHashRing(values, salt);
-      const assigned = await findAssignedValue(ring, target, salt);
+      const hashInput = salt + singleValue;
+      const hash = await sha1Hex(hashInput);
+      const index = hash % values.length;
+      const chosenValue = values[index];
+      const match = (chosenValue === singleValue);
 
-      const match = (assigned === target);
-      document.getElementById("result").innerText = `Assigned value: ${assigned}\nMatch: ${match ? "✅ True" : "❌ False"}`;
+      document.getElementById("result").innerText =
+        `Chosen: ${chosenValue}\nMatch: ${match ? "✅ True" : "❌ False"}`;
     }
   </script>
 </body>

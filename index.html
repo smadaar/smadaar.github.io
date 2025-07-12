@@ -1,66 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Simple Consistent Hashing</title>
+  <meta charset="UTF-8" />
+  <title>Value Matcher</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-    textarea, input { width: 100%; margin-bottom: 10px; padding: 8px; font-size: 14px; }
-    button { padding: 10px 20px; font-size: 16px; }
+    textarea, input, button { width: 100%; margin-bottom: 10px; padding: 8px; font-size: 14px; }
+    button { font-size: 16px; }
     #result { font-size: 18px; font-weight: bold; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h2>Hash Choo3333ser</h2>
+  <h2>Choose a Value from List Using Salt</h2>
 
   <label>List of Values (one per line):</label>
-  <textarea id="values" rows="6" placeholder="nodeA&#10;nodeB&#10;nodeC"></textarea>
+  <textarea id="values" rows="6" placeholder="A&#10;B&#10;C"></textarea>
 
-  <label>Single Value:</label>
-  <input type="text" id="singleValue" placeholder="e.g. nodeB" />
+  <label>Single Value to Compare:</label>
+  <input type="text" id="singleValue" placeholder="e.g. B" />
 
   <label>Salt:</label>
-  <input type="text" id="salt" placeholder="Optional salt" />
+  <input type="text" id="salt" placeholder="e.g. seed123" />
 
-  <button onclick="runHashMatch()">Check</button>
+  <button onclick="checkMatch()">Check</button>
 
   <div id="result"></div>
 
   <script>
-    async function sha1Hex(str) {
-      const buffer = new TextEncoder().encode(str);
-      const hash = await crypto.subtle.digest("SHA-1", buffer);
-      const byteArray = new Uint8Array(hash);
-      // Convert to integer (first 4 bytes only for simplicity)
-      return (
-        (byteArray[0] << 24) |
-        (byteArray[1] << 16) |
-        (byteArray[2] << 8) |
-        (byteArray[3])
-      ) >>> 0; // unsigned
+    // Simple djb2 hash
+    function simpleHash(str) {
+      let hash = 5381;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash) + str.charCodeAt(i); // hash * 33 + c
+      }
+      return Math.abs(hash);
     }
 
-    async function runHashMatch() {
+    function checkMatch() {
       const values = document.getElementById("values").value
         .split("\n")
         .map(v => v.trim())
-        .filter(v => v);
+        .filter(v => v.length > 0);
+
       const singleValue = document.getElementById("singleValue").value.trim();
       const salt = document.getElementById("salt").value.trim();
 
       if (!values.length || !singleValue) {
-        document.getElementById("result").innerText = "Please enter both the list and single value.";
+        document.getElementById("result").innerText = "Please fill in both the list and the single value.";
         return;
       }
 
-      const hashInput = salt + singleValue;
-      const hash = await sha1Hex(hashInput);
+      const hash = simpleHash(salt);
       const index = hash % values.length;
-      const chosenValue = values[index];
-      const match = (chosenValue === singleValue);
+      const chosen = values[index];
+      const isMatch = (chosen === singleValue);
 
       document.getElementById("result").innerText =
-        `Chosen: ${chosenValue}\nMatch: ${match ? "✅ True" : "❌ False"}`;
+        `Chosen Value: ${chosen}\nMatch: ${isMatch ? "✅ True" : "❌ False"}`;
     }
   </script>
 </body>

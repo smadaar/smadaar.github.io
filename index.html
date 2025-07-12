@@ -2,46 +2,113 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mr 2Freeze</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mr Freeze</title>
   <style>
     body {
       margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to bottom, #b3e0f2, #e0f7fa);
+      font-family: Arial, sans-serif;
+      background: #ccefff;
       color: #033e6b;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
     }
 
-    .container {
-      background-color: white;
-      border-radius: 12px;
+    .wrapper {
       padding: 20px;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
     }
 
     h2 {
       text-align: center;
-      font-size: 1.8em;
+      font-size: 24px;
       color: #055c9d;
-      margin-bottom: 20px;
     }
 
     label {
       display: block;
-      margin-top: 15px;
+      margin-top: 20px;
       font-weight: bold;
     }
 
-    textarea,
-    input,
-    button {
+    textarea, input, button {
       width: 100%;
+      font-size: 16px;
+      padding: 10px;
       margin-top: 8px;
-      paddin
+      box-sizing: border-box;
+    }
+
+    textarea {
+      min-height: 80px;
+    }
+
+    button {
+      background: #055c9d;
+      color: white;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    #result {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h2>❄️ Mr Freeze ❄️</h2>
+
+    <label for="values">List of Values (one per line):</label>
+    <textarea id="values">E
+L
+S
+D</textarea>
+
+    <label for="singleValue">Single Value to Compare:</label>
+    <input type="text" id="singleValue" oninput="this.value = this.value.toUpperCase()" placeholder="e.g. L" />
+
+    <label for="salt">Salt:</label>
+    <input type="text" id="salt" placeholder="e.g. snowball" />
+
+    <button onclick="checkMatch()">Freeze Check</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    function simpleHash(str) {
+      let hash = 5381;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash) + str.charCodeAt(i);
+      }
+      return Math.abs(hash);
+    }
+
+    function checkMatch() {
+      const values = document.getElementById("values").value
+        .split("\n")
+        .map(v => v.trim().toUpperCase())
+        .filter(v => v !== "");
+
+      const singleValue = document.getElementById("singleValue").value.trim().toUpperCase();
+      const salt = document.getElementById("salt").value;
+
+      if (!values.length || !singleValue || !salt) {
+        document.getElementById("result").innerText = "";
+        return;
+      }
+
+      const index = simpleHash(salt) % values.length;
+      const chosen = values[index];
+
+      document.getElementById("result").innerText = (chosen === singleValue) ? "true" : "false";
+    }
+  </script>
+</body>
+</html>

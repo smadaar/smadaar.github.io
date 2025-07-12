@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Consistent Hash Checker</title>
+  <meta charset="UTF-8" />
+  <title>Consistent Hash Matcher</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
     textarea, input { width: 100%; margin-bottom: 10px; padding: 8px; font-size: 14px; }
@@ -11,16 +11,13 @@
   </style>
 </head>
 <body>
-  <h2>Consistent Hash Key Mapping</h2>
+  <h2>Consistent Hash: Match Target Value</h2>
 
-  <label>Nodes (one per line):</label>
-  <textarea id="nodes" rows="6" placeholder="nodeA&#10;nodeB&#10;nodeC"></textarea>
+  <label>List of Values (one per line):</label>
+  <textarea id="values" rows="6" placeholder="server1&#10;server2&#10;server3"></textarea>
 
-  <label>Target Node (to check if selected):</label>
-  <input type="text" id="targetNode" placeholder="e.g., nodeB" />
-
-  <label>Key to Hash (e.g., user123):</label>
-  <input type="text" id="keyToHash" placeholder="e.g., user123" />
+  <label>Single Value to Test:</label>
+  <input type="text" id="target" placeholder="e.g. server2" />
 
   <label>Salt:</label>
   <input type="text" id="salt" placeholder="Optional salt" />
@@ -36,41 +33,39 @@
       return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    async function buildHashRing(nodes, salt) {
+    async function buildHashRing(values, salt) {
       const ring = [];
-      for (const node of nodes) {
-        const hash = await sha1Hex(salt + node);
-        ring.push({ node, hash });
+      for (const val of values) {
+        const hash = await sha1Hex(salt + val);
+        ring.push({ value: val, hash });
       }
       ring.sort((a, b) => a.hash.localeCompare(b.hash));
       return ring;
     }
 
-    async function getNodeForKey(ring, key, salt) {
+    async function findAssignedValue(ring, key, salt) {
       const keyHash = await sha1Hex(salt + key);
       for (const entry of ring) {
-        if (keyHash <= entry.hash) return entry.node;
+        if (keyHash <= entry.hash) return entry.value;
       }
-      // wrap around
-      return ring[0].node;
+      return ring[0].value; // wrap around
     }
 
     async function checkConsistentHash() {
-      const nodeLines = document.getElementById("nodes").value.trim().split("\n").map(v => v.trim()).filter(Boolean);
-      const targetNode = document.getElementById("targetNode").value.trim();
-      const keyToHash = document.getElementById("keyToHash").value.trim();
+      const values = document.getElementById("values").value.split("\n").map(v => v.trim()).filter(v => v);
+      const target = document.getElementById("target").value.trim();
       const salt = document.getElementById("salt").value.trim();
 
-      if (!nodeLines.length || !targetNode || !keyToHash) {
-        document.getElementById("result").innerText = "Please fill in all required fields.";
+      if (!values.length || !target) {
+        document.getElementById("result").innerText = "Please enter both list and single value.";
         return;
       }
 
-      const ring = await buildHashRing(nodeLines, salt);
-      const assignedNode = await getNodeForKey(ring, keyToHash, salt);
+      const ring = await buildHashRing(values, salt);
+      const assigned = await findAssignedValue(ring, target, salt);
 
-      const result = assignedNode === targetNode;
-      document.getElementById("result").innerText = `Key maps to: ${assignedNode}\nMatch: ${result ? "✅ True" : "❌ False"}`;
+      const match = (assigned === target);
+      document.getElementById("result").innerText = `Assigned value: ${assigned}\nMatch: ${match ? "✅ True" : "❌ False"}`;
     }
   </script>
 </body>

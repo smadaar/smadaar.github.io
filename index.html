@@ -32,7 +32,7 @@
       font-weight: bold;
     }
 
-    textarea, input, button {
+    textarea, input {
       width: 100%;
       font-size: 16px;
       padding: 10px;
@@ -44,12 +44,26 @@
       min-height: 80px;
     }
 
-    button {
-      background: #055c9d;
+    #buttons {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .value-button {
+      background-color: #055c9d;
       color: white;
       border: none;
-      margin-top: 20px;
+      border-radius: 5px;
+      padding: 10px 15px;
+      font-size: 16px;
       cursor: pointer;
+    }
+
+    .value-button:hover {
+      background-color: #044a80;
     }
 
     #result {
@@ -70,45 +84,7 @@ L
 S
 D</textarea>
 
-    <label for="singleValue">Single Value to Compare:</label>
-    <input type="text" id="singleValue" oninput="this.value = this.value.toUpperCase()" placeholder="e.g. L" />
-
     <label for="salt">Salt:</label>
     <input type="text" id="salt" placeholder="e.g. snowball" />
 
-    <button onclick="checkMatch()">Freeze Check</button>
-
-    <div id="result"></div>
-  </div>
-
-  <script>
-    function simpleHash(str) {
-      let hash = 5381;
-      for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) + hash) + str.charCodeAt(i);
-      }
-      return Math.abs(hash);
-    }
-
-    function checkMatch() {
-      const values = document.getElementById("values").value
-        .split("\n")
-        .map(v => v.trim().toUpperCase())
-        .filter(v => v !== "");
-
-      const singleValue = document.getElementById("singleValue").value.trim().toUpperCase();
-      const salt = document.getElementById("salt").value;
-
-      if (!values.length || !singleValue || !salt) {
-        document.getElementById("result").innerText = "";
-        return;
-      }
-
-      const index = simpleHash(salt) % values.length;
-      const chosen = values[index];
-
-      document.getElementById("result").innerText = (chosen === singleValue) ? "true" : "false";
-    }
-  </script>
-</body>
-</html>
+    <div id="buttons

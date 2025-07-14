@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2 Team Word Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    #word {
+      font-size: 2rem;
+      margin: 20px 0;
+    }
+    #timer {
+      font-size: 1.5rem;
+      margin: 10px 0;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 1rem;
+    }
+    #roundDisplay {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>2 Team Word Game</h1>
+  <p id="roundDisplay">Round 1 - Describe Freely</p>
+  <p>Current Team: <span id="currentTeam">Team 1</span></p>
+  <div id="word">Click Start to Begin</div>
+  <div id="timer">60</div>
+  <button onclick="startTurn()">Start Turn</button>
+  <button onclick="nextWord()">Guessed!</button>
+
+  <script>
+    const words = [
+      "apple", "banana", "car", "dog", "elephant", "flower", "guitar", "house", "island", "jungle",
+      "kite", "lion", "mountain", "notebook", "ocean", "pizza", "queen", "rocket", "sun", "tree",
+      "umbrella", "violin", "whale", "xylophone", "yogurt", "zebra", "ball", "chair", "drum", "egg"
+    ];
+    let round = 1;
+    let team = 1;
+    let timeLeft = 60;
+    let timer;
+    let wordIndex = 0;
+    let roundWords = [...words];
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    shuffle(roundWords);
+
+    function startTurn() {
+      clearInterval(timer);
+      timeLeft = 60;
+      document.getElementById("timer").textContent = timeLeft;
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          switchTeam();
+        }
+      }, 1000);
+      showWord();
+    }
+
+    function showWord() {
+      if (wordIndex >= roundWords.length) {
+        if (round === 1) {
+          round = 2;
+          wordIndex = 0;
+          shuffle(roundWords);
+          document.getElementById("roundDisplay").textContent = "Round 2 - One Word Description";
+        } else {
+          document.getElementById("word").textContent = "Game Over!";
+          return;
+        }
+      }
+      document.getElementById("word").textContent = roundWords[wordIndex];
+    }
+
+    function nextWord() {
+      wordIndex++;
+      showWord();
+    }
+
+    function switchTeam() {
+      team = team === 1 ? 2 : 1;
+      document.getElementById("currentTeam").textContent = `Team ${team}`;
+      document.getElementById("word").textContent = "Click Start to Begin";
+    }
+  </script>
+</body>
+</html>

@@ -1,167 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mr Freeze</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Directory</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #ccefff; color: #033e6b; }
-    .wrapper { padding: 20px; max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; text-transform: uppercase; }
-    h2 { text-align: center; font-size: 24px; color: #055c9d; }
-    label { display: block; margin-top: 20px; font-weight: bold; }
-    textarea, input, button { width: 100%; font-size: 16px; padding: 10px; margin-top: 8px; box-sizing: border-box; text-transform: uppercase; }
-    textarea { min-height: 100px; }
-    #buttonsContainer { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; }
-    #buttonsContainer button { flex: 1; min-width: 100px; background: #e0e0e0; color: #033e6b; border: none; cursor: pointer; }
-    #buttonsContainer .active { background: #055c9d; color: white; }
-    #refreshBtn, #freezeBtn { background: #055c9d; color: white; border: none; cursor: pointer; margin-top: 20px; }
-    #salt { margin-top: 10px; }
-    #result { margin-top: 30px; text-align: center; font-size: 24px; font-weight: bold; visibility: hidden; }
-    #shareLinkContainer { margin-top: 30px; text-align: center; }
-    #shareLink { width: 100%; padding: 10px; font-size: 14px; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 10px 0;
+    }
+    a {
+      text-decoration: none;
+      color: #007BFF;
+      font-size: 1.2rem;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
-  <div class="wrapper">
-    <h2>❄️ MR FREEZE – PLAYERS ❄️</h2>
-    <label for="values">List of Players (one per line):</label>
-    <textarea id="values" rows="6">EMILY
-LAUREN
-SOPHIE
-DAD
-MUM</textarea>
-
-    <div id="buttonsContainer"></div>
-    <button id="refreshBtn" onclick="renderPlayerButtons()">Refresh Players</button>
-
-    <label for="salt">Salt:</label>
-    <input type="text" id="salt" placeholder="E.G. SNOWBALL" oninput="onInputChange()" />
-
-    <button id="freezeBtn" onclick="checkMatch()">Freeze Check</button>
-    <div id="result"></div>
-
-    <div id="shareLinkContainer">
-      <h3>Share</h3>
-      <input type="text" id="shareLink" readonly onclick="this.select()" />
-    </div>
-  </div>
-
-  <script>
-    let selectedPlayer = "";
-
-    function simpleHash(str) {
-      let hash = 5381;
-      for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) + hash) + str.charCodeAt(i);
-      }
-      return hash >>> 0;
-    }
-
-    function renderPlayerButtons() {
-      const container = document.getElementById("buttonsContainer");
-      container.innerHTML = "";
-      document.getElementById("result").style.visibility = "hidden";
-
-      const players = document.getElementById("values").value
-        .split("\n")
-        .map(v => v.trim().toUpperCase())
-        .filter(v => v);
-
-      players.forEach(name => {
-        const btn = document.createElement("button");
-        btn.innerText = name;
-        btn.onclick = () => {
-          selectedPlayer = name;
-          highlightActive(btn);
-          document.getElementById("result").style.visibility = "hidden";
-          generateShareLink(); // Update share link when player is selected
-        };
-        container.appendChild(btn);
-      });
-    }
-
-    function highlightActive(clickedBtn) {
-      const btns = document.querySelectorAll("#buttonsContainer button");
-      btns.forEach(b => b.classList.remove("active"));
-      clickedBtn.classList.add("active");
-    }
-
-    function onInputChange() {
-      document.getElementById("result").style.visibility = "hidden";
-      generateShareLink(); // Update share link when input changes
-    }
-
-    function checkMatch() {
-      const players = document.getElementById("values").value
-        .split("\n")
-        .map(v => v.trim().toUpperCase())
-        .filter(v => v);
-
-      const salt = document.getElementById("salt").value.trim().toUpperCase();
-
-      if (!players.length || !selectedPlayer || !salt) {
-        document.getElementById("result").innerText = "";
-        document.getElementById("result").style.visibility = "hidden";
-        return;
-      }
-
-      const index = simpleHash(salt) % players.length;
-      const chosen = players[index];
-      const outcome = chosen === selectedPlayer ? "You are Mr Freeze!" : "Maybe next time :(";
-
-      const resultDiv = document.getElementById("result");
-      resultDiv.innerText = outcome;
-      resultDiv.style.visibility = "visible";
-    }
-
-    function generateShareLink() {
-      const values = document.getElementById("values").value.trim().toUpperCase();
-      const salt = document.getElementById("salt").value.trim().toUpperCase();
-      const selectedPlayer = getSelectedPlayer();
-
-      const queryParams = new URLSearchParams({
-        values: values,
-        salt: salt,
-        selectedPlayer: selectedPlayer
-      }).toString();
-
-      const shareUrl = `${window.location.href.split('?')[0]}?${queryParams}`;
-      document.getElementById("shareLink").value = shareUrl;
-    }
-
-    function getSelectedPlayer() {
-      return selectedPlayer || ''; // Replace with your actual variable
-    }
-
-    function loadGameStateFromURL() {
-      const params = new URLSearchParams(window.location.search);
-      const values = params.get('values');
-      const salt = params.get('salt');
-      const selectedPlayer = params.get('selectedPlayer');
-
-      if (values) {
-        document.getElementById("values").value = decodeURIComponent(values).toUpperCase();
-        renderPlayerButtons();
-      }
-
-      if (salt) {
-        document.getElementById("salt").value = decodeURIComponent(salt).toUpperCase();
-      }
-
-      if (selectedPlayer) {
-        selectedPlayer = selectedPlayer.toUpperCase();
-        const buttons = document.querySelectorAll("#buttonsContainer button");
-        buttons.forEach(button => {
-          if (button.innerText === selectedPlayer) {
-            button.click();
-          }
-        });
-      }
-    }
-
-    window.onload = function() {
-      loadGameStateFromURL();
-    };
-  </script>
+  <h1>Game Directory</h1>
+  <ul>
+    <li><a href="whats-in-the-bag.html">What's in the Bag</a></li>
+    <li><a href="mr-freeze.html">Mr. Freeze</a></li>
+    <li><a href="nommy.html">Nommy score</a></li>
+  </ul>
 </body>
 </html>

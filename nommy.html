@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nomination Whist Scorer</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 10px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .controls input, .controls button { flex: 1 1 150px; min-width: 120px; }
+
+    .table-container { overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+
+    .form-group { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    .form-group label { flex: 1 1 80px; }
+    .form-group input { flex: 1 1 60px; }
+
+    @media (max-width: 600px) {
+      table thead { display: none; }
+      table, tbody, tr, td, tfoot { display: block; width: 100%; }
+      tr { margin-bottom: 10px; border: 1px solid #ccc; border-radius: 6px; padding: 6px; }
+      td { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dotted #ddd; }
+      td:last-child { border-bottom: none; }
+      td::before { content: attr(data-label); font-weight: bold; flex: 1; }
+      td > * { flex: 2; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Nomination Whist Scorer</h1>
+  <div class="controls">
+    <label>Rounds: <input id="rounds" type="number" value="5" min="1"></label>
+    <input id="playerName" type="text" placeholder="Player name">
+    <button onclick="addPlayer()">Add Player</button>
+    <button onclick="setup()">Setup Game</button>
+  </div>
+
+  <div class="table-container">
+    <form id="scoreForm" style="display:none;">
+      <table id="scoreTable">
+        <thead><tr><th>Round \ Player</th></tr></thead>
+        <tbody></tbody>
+        <tfoot><tr><td class="total">Total</td></tr></tfoot>
+      </table>
+      <button type="button" onclick="calculateScores()">Calculate Scores</button>
+    </form>
+  </div>
+
+  <script>
+    let players = [];
+
+    function addPlayer() {
+      const nm = document.getElementById('playerName').value.trim();
+      if (nm && !players.includes(nm)) {
+        players.push(nm);
+        document.getElementById('playerName').value=''; setup();
+      }
+    }
+
+    function setup() {
+      const form = document.getElementById('scoreForm');
+      const rounds = +document.getElementById('rounds').value;
+      const table = document.getElementById('scoreTable');
+      const head = table.tHead.rows[0];
+      head.innerHTML = '<th>Round \\ Player</th>' + players.map(p=>`<th>${p}</th>`).join('');
+      const tbody = table.tBodies[0]; tbody.innerHTML = '';
+      for(let r=1; r<=rounds; r++) {
+        const tr=document.createElement('tr');
+        tr.innerHTML = `<td>${r}</td>` + players.map((_,i) => `
+          <td>
+            <div class="form-group">
+              <label>Nom:<input type=number min=0 data-round=${r} data-player=${i} class="nom"/></label>
+              <label>Got:<input type=number min=0 data-round=${r} data-player=${i} class="got"/></label>
+              <span class="score" data-round=${r} data-player=${i}></span>
+            </div>
+          </td>`).join('');
+        tbody.appendChild(tr);
+      }
+      const foot = table.tFoot.rows[0];
+      foot.innerHTML = '<td class="total">Total</td>' + players.map((_,i)=>`<td><span class="totalScore" data-player="${i}">0</span></td>`).join('');
+      form.style.display = players.length ? 'block' : 'none';
+      addDataLabels();
+    }
+
+    function addDataLabels() {
+      const headers = [...document.querySelectorAll('#scoreTable thead th')].map(th=>th.textContent);
+      document.querySelectorAll('#scoreTable tbody tr').forEach(tr => {
+        tr.querySelectorAll('td').forEach((td,i) => {
+          td.setAttribute('data-label', headers[i] || '');
+        });
+      });
+    }
+
+    function calculateScores() {
+      const rounds = +document.getElementById('rounds').value;
+      const totals = players.map(()=>0);
+      for(let r=1; r<=rounds; r++){
+        players.forEach((_,i)=>{
+          const nom = +document.querySelector(`.nom[data-round="${r}"][data-player="${i}"]`).value||0;
+          const got = +document.querySelector(`.got[data-round="${r}"][data-player="${i}"]`).value||0;
+          const sc = (got === nom ? 10 + got*10 : got*10);
+          totals[i] += sc;
+          document.querySelector(`.score[data-round="${r}"][data-player="${i}"]`).textContent = sc;
+        });
+      }
+      document.querySelectorAll('.totalScore').forEach(el => {
+        el.textContent = totals[el.getAttribute('data-player')];
+      });
+    }
+  </script>
+</body>
+</html>

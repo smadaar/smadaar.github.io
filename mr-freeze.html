@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mr. Freeze</title>
+  <style>
+    /* General styling */
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to bottom, #e0f7fa, #80deea); /* Frosty blue gradient */
+      color: #004d40; /* Dark teal for contrast */
+      margin: 0;
+      padding: 0;
+    }
+
+    .wrapper {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h2 {
+      font-size: 2rem;
+      color: #006064; /* Deep teal */
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Buttons */
+    button {
+      background-color: #00acc1; /* Frosty blue */
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px 5px;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    button:hover {
+      background-color: #00838f; /* Darker blue on hover */
+    }
+
+    button.active {
+      background-color: #004d40; /* Dark teal for active buttons */
+      color: #e0f7fa; /* Light blue text */
+    }
+
+    /* Inputs and Textareas */
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #00acc1;
+      border-radius: 5px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    textarea:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: #00838f;
+    }
+
+    /* Result styling */
+    #result {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-top: 20px;
+      color: #004d40;
+      visibility: hidden;
+    }
+
+  
+    /* Mobile styling */
+    @media (max-width: 600px) {
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      button {
+        font-size: 0.9rem;
+        padding: 8px 15px;
+      }
+
+      textarea, input[type="text"] {
+        font-size: 0.9rem;
+      }
+
+      #result {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h2>❄️ MR FREEZE ❄️</h2>
+
+    <!-- Setup mode section -->
+    <div id="setupMode" style="display: none;">
+      <label for="setupValues">Enter Player Names (one per line):</label>
+      <textarea id="setupValues" rows="6"></textarea>
+      <button id="startGameBtn">Start Game</button>
+    </div>
+
+    <!-- Game mode section -->
+    <div id="gameMode" style="display: none;">
+      <label for="values">List of Players (one per line):</label>
+      <textarea id="values" rows="6" oninput="forceUppercase(this)"></textarea>
+
+      <div id="buttonsContainer"></div>
+
+      <label for="salt">Salt:</label>
+      <input type="text" id="salt" placeholder="E.G. SNOWBALL" oninput="forceUppercase(this)" />
+
+      <button id="freezeBtn">Freeze Check</button>
+
+    </div>
+
+    <!-- Setup Game Link -->
+    <div style="margin-top: 20px;">
+      <a href="mr-freeze.html">Setup Game</a>
+    </div>
+
+    <!-- Game Link -->
+    <div style="margin-top: 10px;">
+      <a id="gameLink" href="#">Game Link</a>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 2px solid #00acc1; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); z-index: 1000;">
+      <p id="modalMessage" style="color: #004d40; font-size: 1.2rem; margin: 0;"></p>
+      <button onclick="closeModal()" style="margin-top: 10px; background-color: #00acc1; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Close</button>
+    </div>
+    <div id="modalBackdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999;"></div>
+  </div>
+
+  <script>
+    let selectedPlayer = "";
+
+    function simpleHash(str) {
+      const now = new Date();
+      const utcDate = now.getUTCDate().toString().padStart(2, '0') +
+                      (now.getUTCMonth() + 1).toString().padStart(2, '0') +
+                      now.getUTCFullYear();
+      const combinedStr = str + utcDate;
+      let hash = 5381;
+      for (let c of combinedStr) hash = ((hash << 5) + hash) + c.charCodeAt(0);
+      return hash >>> 0;
+    }
+
+    function renderPlayerButtons() {
+      const container = document.getElementById("buttonsContainer");
+      container.innerHTML = "";
+
+      const players = document.getElementById("values").value
+        .split("\n")
+        .map(v => v.trim().toUpperCase())
+        .filter(v => v);
+
+      players.forEach(name => {
+        const btn = document.createElement("button");
+        btn.innerText = name;
+        btn.onclick = () => {
+          selectedPlayer = name;
+          highlightActive(btn);
+        };
+        container.appendChild(btn);
+      });
+
+      updateGameLink();
+    }
+
+    function highlightActive(btn) {
+      document.querySelectorAll("#buttonsContainer button")
+        .forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    }
+
+    function checkMatch() {
+      const players = document.getElementById("values").value
+        .split("\n")
+        .map(v => v.trim().toUpperCase())
+        .filter(v => v);
+      const salt = document.getElementById("salt").value.trim().toUpperCase();
+
+      if (!selectedPlayer) {
+        showModal("Please select a player.");
+        return;
+      }
+
+      if (!salt) {
+        showModal("Please enter a salt value.");
+        return;
+      }
+
+      const chosen = players[simpleHash(salt) % players.length];
+      const msg = chosen === selectedPlayer 
+        ? "You are Mr Freeze!" 
+        : "Maybe next time :(";
+      showModal(msg);
+    }
+
+    function showModal(message) {
+      document.getElementById("modalMessage").innerText = message;
+      document.getElementById("modal").style.display = "block";
+      document.getElementById("modalBackdrop").style.display = "block";
+    }
+
+    function closeModal() {
+      document.getElementById("modal").style.display = "none";
+      document.getElementById("modalBackdrop").style.display = "none";
+    }
+
+    function forceUppercase(element) {
+      element.value = element.value.toUpperCase();
+    }
+
+    function updateGameLink() {
+      const values = document.getElementById("values").value.trim().toUpperCase();
+      const salt = document.getElementById("salt").value.trim().toUpperCase();
+      const params = new URLSearchParams({ values, salt, selectedPlayer });
+      const url = window.location.href.split("?")[0] + "?" + params;
+      document.getElementById("gameLink").href = url;
+    }
+
+    function loadGameState() {
+      const params = new URLSearchParams(window.location.search);
+      const hasValues = params.has("values");
+
+      if (!hasValues) {
+        document.getElementById("setupMode").style.display = "block";
+        document.getElementById("gameMode").style.display = "none";
+        document.getElementById("setupValues").value = "Lauren\nSophie\nEmily\nDad\nMum";
+        return;
+      }
+
+      document.getElementById("setupMode").style.display = "none";
+      document.getElementById("gameMode").style.display = "block";
+
+      const valuesTextarea = document.getElementById("values");
+      const valuesLabel = document.querySelector('label[for="values"]');
+      valuesTextarea.value = decodeURIComponent(params.get("values")).toUpperCase();
+      valuesTextarea.style.display = "none";
+      valuesLabel.style.display = "none";
+
+      renderPlayerButtons();
+      document.getElementById("salt").value = params.get("salt")?.toUpperCase() || "";
+      selectedPlayer = params.get("selectedPlayer")?.toUpperCase() || "";
+      if (selectedPlayer) {
+        document.querySelectorAll("#buttonsContainer button").forEach(btn => {
+          if (btn.innerText === selectedPlayer) btn.click();
+        });
+      }
+
+      updateGameLink();
+    }
+
+    document.getElementById("startGameBtn").addEventListener("click", () => {
+      const raw = document.getElementById("setupValues").value.trim().toUpperCase();
+      const players = raw.split("\n").map(p => p.trim()).filter(p => p !== "");
+      if (!players.length) {
+        alert("Please enter at least one player.");
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.set("values", players.join("\n"));
+      window.location.search = params.toString();
+    });
+
+    document.getElementById("freezeBtn").addEventListener("click", checkMatch);
+
+    document.getElementById("salt").addEventListener("input", updateGameLink);
+    document.getElementById("values").addEventListener("input", updateGameLink);
+
+    window.onload = loadGameState;
+  </script>
+</body>
+</html>

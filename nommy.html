@@ -1,114 +1,313 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Nomination Whist Scorer</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 10px; }
-    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
-    .controls input, .controls button { flex: 1 1 150px; min-width: 120px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nomination Whist</title>
 
-    .table-container { overflow-x: auto; margin-top: 10px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+<style>
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont;
+    background: radial-gradient(circle at top, #0b6623, #043d16);
+    color: white;
+}
 
-    .form-group { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-    .form-group label { flex: 1 1 80px; }
-    .form-group input { flex: 1 1 60px; }
+h1 { text-align: center; margin: 10px 0; }
 
-    @media (max-width: 600px) {
-      table thead { display: none; }
-      table, tbody, tr, td, tfoot { display: block; width: 100%; }
-      tr { margin-bottom: 10px; border: 1px solid #ccc; border-radius: 6px; padding: 6px; }
-      td { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dotted #ddd; }
-      td:last-child { border-bottom: none; }
-      td::before { content: attr(data-label); font-weight: bold; flex: 1; }
-      td > * { flex: 2; }
-    }
-  </style>
+#setup {
+    padding: 15px;
+    max-width: 420px;
+    margin: auto;
+    background: #064d1a;
+    border-radius: 12px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    background: #f5f5f5;
+    color: black;
+    font-size: 14px;
+}
+
+th, td {
+    border: 1px solid #aaa;
+    padding: 6px;
+    text-align: center;
+}
+
+th {
+    position: sticky;
+    top: 0;
+    background: #ddd;
+}
+
+.playerBtn {
+    background: none;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.dealer {
+    background: gold !important;
+}
+
+.nextDealer {
+    outline: 3px solid #ff9800;
+}
+
+input {
+    width: 42px;
+    font-size: 16px;
+    text-align: center;
+}
+
+.correct { background: #b6f2b6; font-weight: bold; }
+.incorrect { background: #f6b0b0; font-weight: bold; }
+
+.invalidRow td {
+    background: #ffcccc !important;
+}
+
+.hidden { display: none; }
+
+/* ---------- KEYPAD ---------- */
+#keypad {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #222;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    z-index: 10;
+}
+
+#keypad button {
+    font-size: 22px;
+    padding: 16px;
+    border-radius: 10px;
+    border: none;
+}
+
+#keypad button.clear {
+    grid-column: span 3;
+    background: #f6b0b0;
+}
+</style>
 </head>
+
 <body>
-  <h1>Nomination Whist Scorer</h1>
-  <div class="controls">
-    <label>Rounds: <input id="rounds" type="number" value="5" min="1"></label>
-    <input id="playerName" type="text" placeholder="Player name">
-    <button onclick="addPlayer()">Add Player</button>
-    <button onclick="setup()">Setup Game</button>
-  </div>
 
-  <div class="table-container">
-    <form id="scoreForm" style="display:none;">
-      <table id="scoreTable">
-        <thead><tr><th>Round \ Player</th></tr></thead>
-        <tbody></tbody>
-        <tfoot><tr><td class="total">Total</td></tr></tfoot>
-      </table>
-      <button type="button" onclick="calculateScores()">Calculate Scores</button>
-    </form>
-  </div>
+<h1>Nomination Whist</h1>
 
-  <script>
-    let players = [];
+<div id="setup">
+    Players:
+    <select id="playerCount">
+        <option>3</option><option selected>4</option><option>5</option>
+        <option>6</option><option>7</option><option>8</option>
+    </select>
+    <div id="playerNames"></div>
+    <button onclick="startGame()">Start Game</button>
+</div>
 
-    function addPlayer() {
-      const nm = document.getElementById('playerName').value.trim();
-      if (nm && !players.includes(nm)) {
-        players.push(nm);
-        document.getElementById('playerName').value=''; setup();
-      }
+<div id="game" class="hidden">
+    <table id="scoresheet"></table>
+</div>
+
+<div id="keypad" class="hidden">
+    <button onclick="pressKey(1)">1</button>
+    <button onclick="pressKey(2)">2</button>
+    <button onclick="pressKey(3)">3</button>
+    <button onclick="pressKey(4)">4</button>
+    <button onclick="pressKey(5)">5</button>
+    <button onclick="pressKey(6)">6</button>
+    <button onclick="pressKey(7)">7</button>
+    <button onclick="pressKey(8)">8</button>
+    <button class="clear" onclick="clearKey()">Clear</button>
+</div>
+
+<script>
+let playerCount = 0;
+let activeInput = null;
+let dealerIndex = 0;
+let completedRounds = 0;
+
+function maxHand(p) {
+    return Math.min(8, Math.floor(52 / p));
+}
+
+function buildRounds(p) {
+    const m = maxHand(p);
+    const r = [];
+    for (let i = m; i >= 1; i--) r.push(i);
+    r.push(1);
+    for (let i = 2; i <= m; i++) r.push(i);
+    return r;
+}
+
+function label(v) {
+    if (v === 3) return "B";
+    if (v === 4) return "NT";
+    return v;
+}
+
+function roundValue(v) {
+    if (v === "B") return 3;
+    if (v === "NT") return 4;
+    return Number(v);
+}
+
+document.getElementById("playerCount").onchange = updateNames;
+updateNames();
+
+function updateNames() {
+    const c = Number(document.getElementById("playerCount").value);
+    const d = document.getElementById("playerNames");
+    d.innerHTML = "";
+    for (let i = 0; i < c; i++) {
+        d.innerHTML += `Player ${i+1}: <input id="n${i}" value="Player ${i+1}"><br>`;
+    }
+}
+
+function startGame() {
+    playerCount = Number(document.getElementById("playerCount").value);
+    const names = [...Array(playerCount)].map((_,i)=>document.getElementById(`n${i}`).value);
+
+    document.getElementById("setup").classList.add("hidden");
+    document.getElementById("game").classList.remove("hidden");
+
+    buildTable(names, buildRounds(playerCount));
+    updateDealerHighlight();
+}
+
+function buildTable(names, rounds) {
+    const t = document.getElementById("scoresheet");
+    t.innerHTML = "";
+
+    let h1 = "<tr><th rowspan=2>Round</th>";
+    names.forEach((n,i) => {
+        h1 += `<th colspan=4>
+            <button class="playerBtn" onclick="setDealer(${i})" id="playerHeader${i}">
+                ${n}
+            </button>
+        </th>`;
+    });
+    t.innerHTML += h1 + "</tr>";
+
+    let h2 = "<tr>";
+    names.forEach(()=> h2 += "<th>Bid</th><th>Won</th><th>Score</th><th>Total</th>");
+    t.innerHTML += h2 + "</tr>";
+
+    rounds.forEach(r => {
+        let row = `<tr data-round="${roundValue(label(r))}"><td><b>${label(r)}</b></td>`;
+        names.forEach(()=> row += `
+            <td><input inputmode="none" onfocus="focusIn(this)"></td>
+            <td><input inputmode="none" onfocus="focusIn(this)"></td>
+            <td class="roundScore">0</td>
+            <td class="totalScore">0</td>
+        `);
+        t.innerHTML += row + "</tr>";
+    });
+}
+
+function setDealer(i) {
+    dealerIndex = i;
+    completedRounds = 0;
+    updateDealerHighlight();
+}
+
+function updateDealerHighlight() {
+    document.querySelectorAll(".playerBtn").forEach((b,i)=>{
+        b.classList.remove("dealer","nextDealer");
+        if (i === dealerIndex) b.classList.add("dealer");
+        if (i === (dealerIndex + completedRounds + 1) % playerCount)
+            b.classList.add("nextDealer");
+    });
+}
+
+function focusIn(el) {
+    activeInput = el;
+    document.getElementById("keypad").classList.remove("hidden");
+}
+
+function pressKey(n) {
+    if (!activeInput) return;
+    activeInput.value = n;
+    moveNext(activeInput);
+    calc();
+}
+
+function clearKey() {
+    if (!activeInput) return;
+    activeInput.value = "";
+    calc();
+}
+
+function moveNext(el) {
+    const row = el.closest("tr");
+    const inputs = [...row.querySelectorAll("input")];
+
+    const bidInputs = inputs.filter((_,i)=> i % 2 === 0);
+    const wonInputs = inputs.filter((_,i)=> i % 2 === 1);
+    const order = [...bidInputs, ...wonInputs];
+
+    const idx = order.indexOf(el);
+    if (idx >= 0 && idx < order.length - 1) order[idx + 1].focus();
+}
+
+function calc() {
+    const rows = document.querySelectorAll("#scoresheet tr");
+    const totals = Array(playerCount).fill(0);
+    completedRounds = 0;
+
+    for (let r = 2; r < rows.length; r++) {
+        const row = rows[r];
+        const roundTotal = Number(row.dataset.round);
+        const inputs = [...row.querySelectorAll("input")];
+
+        let wonSum = 0;
+        let allWonFilled = true;
+
+        row.classList.remove("invalidRow");
+
+        for (let p = 0; p < playerCount; p++) {
+            const bid = Number(inputs[p*2].value || 0);
+            const wonInput = inputs[p*2 + 1];
+            const won = Number(wonInput.value || 0);
+
+            if (wonInput.value === "") allWonFilled = false;
+            wonSum += won;
+
+            let score = won;
+            const sc = row.children[1 + p*4 + 2];
+            sc.classList.remove("correct","incorrect");
+
+            if (bid === won && wonInput.value !== "") {
+                score += 10;
+                sc.classList.add("correct");
+            } else if (wonInput.value !== "") {
+                sc.classList.add("incorrect");
+            }
+
+            sc.textContent = score;
+            totals[p] += score;
+            row.children[1 + p*4 + 3].textContent = totals[p];
+        }
+
+        if (allWonFilled) {
+            if (wonSum !== roundTotal) row.classList.add("invalidRow");
+            completedRounds++;
+        }
     }
 
-    function setup() {
-      const form = document.getElementById('scoreForm');
-      const rounds = +document.getElementById('rounds').value;
-      const table = document.getElementById('scoreTable');
-      const head = table.tHead.rows[0];
-      head.innerHTML = '<th>Round \\ Player</th>' + players.map(p=>`<th>${p}</th>`).join('');
-      const tbody = table.tBodies[0]; tbody.innerHTML = '';
-      for(let r=1; r<=rounds; r++) {
-        const tr=document.createElement('tr');
-        tr.innerHTML = `<td>${r}</td>` + players.map((_,i) => `
-          <td>
-            <div class="form-group">
-              <label>Nom:<input type=number min=0 data-round=${r} data-player=${i} class="nom"/></label>
-              <label>Got:<input type=number min=0 data-round=${r} data-player=${i} class="got"/></label>
-              <span class="score" data-round=${r} data-player=${i}></span>
-            </div>
-          </td>`).join('');
-        tbody.appendChild(tr);
-      }
-      const foot = table.tFoot.rows[0];
-      foot.innerHTML = '<td class="total">Total</td>' + players.map((_,i)=>`<td><span class="totalScore" data-player="${i}">0</span></td>`).join('');
-      form.style.display = players.length ? 'block' : 'none';
-      addDataLabels();
-    }
+    updateDealerHighlight();
+}
+</script>
 
-    function addDataLabels() {
-      const headers = [...document.querySelectorAll('#scoreTable thead th')].map(th=>th.textContent);
-      document.querySelectorAll('#scoreTable tbody tr').forEach(tr => {
-        tr.querySelectorAll('td').forEach((td,i) => {
-          td.setAttribute('data-label', headers[i] || '');
-        });
-      });
-    }
-
-    function calculateScores() {
-      const rounds = +document.getElementById('rounds').value;
-      const totals = players.map(()=>0);
-      for(let r=1; r<=rounds; r++){
-        players.forEach((_,i)=>{
-          const nom = +document.querySelector(`.nom[data-round="${r}"][data-player="${i}"]`).value||0;
-          const got = +document.querySelector(`.got[data-round="${r}"][data-player="${i}"]`).value||0;
-          const sc = (got === nom ? 10 + got*10 : got*10);
-          totals[i] += sc;
-          document.querySelector(`.score[data-round="${r}"][data-player="${i}"]`).textContent = sc;
-        });
-      }
-      document.querySelectorAll('.totalScore').forEach(el => {
-        el.textContent = totals[el.getAttribute('data-player')];
-      });
-    }
-  </script>
 </body>
 </html>

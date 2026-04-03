@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Weekly Tasks</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      color: #eef2ff;
+      background: radial-gradient(circle at top, #3b4f9f, #0a1225 45%);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, rgba(124, 226, 255, 0.24), transparent 22%),
+                  radial-gradient(circle at bottom right, rgba(141, 123, 255, 0.18), transparent 26%),
+                  radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.04), transparent 20%),
+                  #07111f;
+      color: #eef2ff;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(135deg, rgba(255,255,255,.04) 0%, rgba(255,255,255,0) 100%);
+      pointer-events: none;
+      opacity: 0.35;
+    }
+
+    main {
+      position: relative;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+      z-index: 1;
+    }
+
+    .hero {
+      display: grid;
+      gap: 18px;
+      margin-bottom: 28px;
+      padding: 26px 24px 26px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+    }
+
+    .hero-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+    }
+
+    .hero p {
+      margin: 0;
+      color: rgba(238, 242, 255, 0.78);
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .secondary-link,
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      color: #eef2ff;
+      padding: 0.85rem 1.2rem;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.18s ease, background-color 0.18s ease;
+    }
+
+    .secondary-link:hover,
+    .btn:hover,
+    .secondary-link:focus-visible,
+    .btn:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(124, 226, 255, 0.16);
+      outline: none;
+    }
+
+    .card {
+      padding: 24px;
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+      display: grid;
+      gap: 22px;
+    }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .task-row {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      display: grid;
+      gap: 14px;
+    }
+
+    .row-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.92rem;
+      color: rgba(238, 242, 255, 0.76);
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      color: #eef2ff;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 0.98rem;
+      outline: none;
+    }
+
+    .field input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    .field input[type="number"]::-webkit-outer-spin-button,
+    .field input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .row-controls {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .delete-btn {
+      min-width: 120px;
+      background: rgba(255, 137, 137, 0.16);
+      color: #ffe7e7;
+      border-color: rgba(255, 137, 137, 0.3);
+    }
+
+    .hint {
+      color: rgba(238, 242, 255, 0.72);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+
+    @media (max-width: 720px) {
+      .row-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-header {
+        align-items: stretch;
+      }
+
+      .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .row-controls {
+        justify-content: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="hero-header">
+        <div>
+          <h1>Edit your weekly tasks</h1>
+          <p>Update the task list stored in your browser cache. New tasks appear automatically in the tracker page.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="secondary-link" href="tasks.html">Back to tracker</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="card">
+      <div class="form-actions">
+        <button id="addTask" class="btn">Add task</button>
+        <button id="restoreDefaults" class="btn">Reset defaults</button>
+      </div>
+
+      <div id="taskForm"></div>
+
+      <div class="form-actions">
+        <button id="saveTasks" class="btn">Save task list</button>
+        <p id="saveMessage" class="hint">Changes are kept in browser storage only.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const taskDefKey = 'weeklyTaskDefinitions';
+    const taskForm = document.getElementById('taskForm');
+    const addTaskButton = document.getElementById('addTask');
+    const saveTasksButton = document.getElementById('saveTasks');
+    const restoreDefaultsButton = document.getElementById('restoreDefaults');
+    const saveMessage = document.getElementById('saveMessage');
+
+    const defaultTasks = [
+      {
+        id: 'steps',
+        title: 'Walk at least 100,000 steps',
+        unitLabel: 'steps',
+        target: 100000,
+        type: 'min',
+        step: 1000
+      },
+      {
+        id: 'fruit',
+        title: 'Eat at least 25 pieces of fruit',
+        unitLabel: 'fruit',
+        target: 25,
+        type: 'min',
+        step: 1
+      },
+      {
+        id: 'alcohol',
+        title: 'Drink no more than 25 alcohol units',
+        unitLabel: 'units',
+        target: 25,
+        type: 'max',
+        step: 1
+      }
+    ];
+
+    function slugify(text) {
+      return String(text || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .substring(0, 35);
+    }
+
+    function getStoredTasks() {
+      const raw = localStorage.getItem(taskDefKey);
+      if (!raw) {
+        localStorage.setItem(taskDefKey, JSON.stringify(defaultTasks));
+        return defaultTasks.slice();
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          throw new Error('Invalid tasks');
+        }
+        return parsed;
+      } catch (err) {
+        localStorage.setItem(taskDefKey, JSON.stringify(defaultTasks));
+        return defaultTasks.slice();
+      }
+    }
+
+    function saveTaskDefinitions(tasks) {
+      localStorage.setItem(taskDefKey, JSON.stringify(tasks));
+      showSaveMessage('Task list saved. Open the tracker to see updates.');
+    }
+
+    function showSaveMessage(text) {
+      saveMessage.textContent = text;
+      setTimeout(() => {
+        saveMessage.textContent = 'Changes are kept in browser storage only.';
+      }, 2500);
+    }
+
+    function createTaskRow(task = {}) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'task-row';
+      wrapper.innerHTML = `
+        <input type="hidden" class="task-id" value="${task.id || ''}">
+        <div class="row-grid">
+          <div class="field">
+            <label>Task title</label>
+            <input class="task-title" type="text" value="${task.title || ''}" placeholder="Example: Walk 100,000 steps">
+          </div>
+          <div class="field">
+            <label>Unit label</label>
+            <input class="task-unit" type="text" value="${task.unitLabel || ''}" placeholder="steps, fruit, units">
+          </div>
+        </div>
+        <div class="row-grid">
+          <div class="field">
+            <label>Target value</label>
+            <input class="task-target" type="number" min="0" value="${task.target || 0}">
+          </div>
+          <div class="field">
+            <label>Step increment</label>
+            <input class="task-step" type="number" min="1" value="${task.step || 1}">
+          </div>
+          <div class="field">
+            <label>Track type</label>
+            <select class="task-type">
+              <option value="min" ${task.type !== 'max' ? 'selected' : ''}>Minimum goal</option>
+              <option value="max" ${task.type === 'max' ? 'selected' : ''}>Maximum limit</option>
+            </select>
+          </div>
+          <div class="row-controls">
+            <button type="button" class="btn delete-btn">Remove</button>
+          </div>
+        </div>
+      `;
+
+      const deleteBtn = wrapper.querySelector('.delete-btn');
+      deleteBtn.addEventListener('click', () => {
+        wrapper.remove();
+      });
+
+      return wrapper;
+    }
+
+    function renderTaskForm() {
+      taskForm.innerHTML = '';
+      const tasks = getStoredTasks();
+      tasks.forEach(task => taskForm.appendChild(createTaskRow(task)));
+    }
+
+    function readTasksFromForm() {
+      const rows = Array.from(taskForm.querySelectorAll('.task-row'));
+      return rows.map((row, index) => {
+        const idInput = row.querySelector('.task-id');
+        const title = row.querySelector('.task-title').value.trim();
+        const unitLabel = row.querySelector('.task-unit').value.trim();
+        const target = Number(row.querySelector('.task-target').value) || 0;
+        const step = Number(row.querySelector('.task-step').value) || 1;
+        const type = row.querySelector('.task-type').value;
+        const id = idInput.value.trim() || slugify(title) || `task-${Date.now()}-${index}`;
+        return { id, title, unitLabel, target, type, step };
+      }).filter(task => task.title && task.unitLabel && task.target >= 0);
+    }
+
+    addTaskButton.addEventListener('click', () => {
+      taskForm.appendChild(createTaskRow({ type: 'min', step: 1 }));
+    });
+
+    saveTasksButton.addEventListener('click', () => {
+      const tasks = readTasksFromForm();
+      saveTaskDefinitions(tasks);
+    });
+
+    restoreDefaultsButton.addEventListener('click', () => {
+      localStorage.setItem(taskDefKey, JSON.stringify(defaultTasks));
+      renderTaskForm();
+      showSaveMessage('Defaults restored. Save to apply them in the tracker.');
+    });
+
+    renderTaskForm();
+  </script>
+</body>
+</html>

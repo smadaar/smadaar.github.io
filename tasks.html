@@ -94,6 +94,34 @@
       outline: none;
     }
 
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      min-width: 180px;
+    }
+
+    .secondary-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.9rem 1.2rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      color: #eef2ff;
+      text-decoration: none;
+      font-weight: 600;
+      transition: transform 0.18s ease, background-color 0.18s ease;
+    }
+
+    .secondary-link:hover,
+    .secondary-link:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(124, 226, 255, 0.16);
+      outline: none;
+    }
+
     p.lead {
       margin: 0;
       max-width: 680px;
@@ -254,6 +282,10 @@
         <div>
           <h1>Weekly task tracker</h1>
         </div>
+        <div class="hero-actions">
+          <a class="secondary-link" href="edit-tasks.html">Edit tasks</a>
+          <button id="resetProgress" class="btn">Reset today</button>
+        </div>
         <div class="week-select-wrap">
           <label for="weekPicker">Select week</label>
           <select id="weekPicker" class="week-select"></select>
@@ -262,6 +294,7 @@
       <p class="lead">Track your weekly goals with browser cache persistence. Choose a week, update the counters, and enjoy a sleek mobile-friendly experience.</p>
     </section>
 
+    <p id="statusMessage" class="hint"></p>
     <div id="taskContainer"></div>
 
     <aside class="footer">
@@ -271,17 +304,19 @@
 
   <script>
     const storageKey = 'weeklyTaskTrackerCounts';
+    const taskDefKey = 'weeklyTaskDefinitions';
+    const selectedWeekKey = 'weeklyTaskTrackerSelectedWeek';
     const weekPicker = document.getElementById('weekPicker');
     const taskContainer = document.getElementById('taskContainer');
 
-    const tasks = [
+    const defaultTasks = [
       {
         id: 'steps',
         title: 'Walk at least 100,000 steps',
         unitLabel: 'steps',
         target: 100000,
         type: 'min',
-        step: 5000
+        step: 1000
       },
       {
         id: 'fruit',
@@ -300,6 +335,41 @@
         step: 1
       }
     ];
+
+    function slugify(text) {
+      return String(text)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .substring(0, 35);
+    }
+
+    function getStoredTasks() {
+      const raw = localStorage.getItem(taskDefKey);
+      if (!raw) {
+        localStorage.setItem(taskDefKey, JSON.stringify(defaultTasks));
+        return defaultTasks.slice();
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          throw new Error('Invalid task definitions');
+        }
+
+        return parsed.map(task => ({
+          id: task.id || slugify(task.title) || `task-${Date.now()}`,
+          title: String(task.title || ''),
+          unitLabel: String(task.unitLabel || ''),
+          target: Number.isFinite(Number(task.target)) ? Number(task.target) : 0,
+          type: task.type === 'max' ? 'max' : 'min',
+          step: Number.isFinite(Number(task.step)) ? Number(task.step) : (task.id === 'steps' ? 1000 : 1)
+        }));
+      } catch (err) {
+        localStorage.setItem(taskDefKey, JSON.stringify(defaultTasks));
+        return defaultTasks.slice();
+      }
+    }
 
     function startOfWeek(date) {
       const copy = new Date(date);
@@ -340,16 +410,43 @@
       localStorage.setItem(storageKey, JSON.stringify(data));
     }
 
-    function getWeekCounts(weekKey) {
-      const storage = getPersistedData();
-      return storage[weekKey] || {};
+    function getDateKey(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     }
 
-    function setWeekCount(weekKey, taskId, value) {
+    function getWeekDayCounts(weekKey, dayKey) {
+      const storage = getPersistedData();
+      return (storage[weekKey] && storage[weekKey][dayKey]) || {};
+    }
+
+    function setWeekDayCount(weekKey, dayKey, taskId, value) {
       const storage = getPersistedData();
       storage[weekKey] = storage[weekKey] || {};
-      storage[weekKey][taskId] = value;
+      storage[weekKey][dayKey] = storage[weekKey][dayKey] || {};
+      storage[weekKey][dayKey][taskId] = value;
       setPersistedData(storage);
+    }
+
+    function showStatusMessage(message) {
+      const statusMessage = document.getElementById('statusMessage');
+      if (statusMessage) {
+        statusMessage.textContent = message;
+        setTimeout(() => {
+          statusMessage.textContent = '';
+        }, 2500);
+      }
+    }
+
+    function resetCurrentDay() {
+      const weekKey = weekPicker.value;
+      const todayKey = getDateKey(new Date());
+      const storage = getPersistedData();
+      if (storage[weekKey] && storage[weekKey][todayKey]) {
+        storage[weekKey][todayKey] = {};
+        setPersistedData(storage);
+      }
+      renderTasksForWeek(weekKey);
+      showStatusMessage('Today\'s progress was reset to 0.');
     }
 
     function clamp(value, min, max) {
@@ -357,7 +454,8 @@
     }
 
     function createTaskCard(task, weekKey) {
-      const counts = getWeekCounts(weekKey);
+      const todayKey = getDateKey(new Date());
+      const counts = getWeekDayCounts(weekKey, todayKey);
       const initialValue = typeof counts[task.id] === 'number' ? counts[task.id] : 0;
       const card = document.createElement('article');
       card.className = 'card';
@@ -391,7 +489,8 @@
 
       function updateDisplay(value) {
         const safeValue = clamp(value, 0, task.type === 'min' ? Math.max(task.target, value) : Math.max(task.target, value));
-        setWeekCount(weekKey, task.id, safeValue);
+        const todayKey = getDateKey(new Date());
+        setWeekDayCount(weekKey, todayKey, task.id, safeValue);
         const progress = task.type === 'min'
           ? clamp((safeValue / task.target) * 100, 0, 100)
           : clamp((1 - safeValue / task.target) * 100, 0, 100);
@@ -419,12 +518,12 @@
       }
 
       decreaseButton.addEventListener('click', () => {
-        const current = typeof getWeekCounts(weekKey)[task.id] === 'number' ? getWeekCounts(weekKey)[task.id] : 0;
+        const current = typeof getWeekDayCounts(weekKey, todayKey)[task.id] === 'number' ? getWeekDayCounts(weekKey, todayKey)[task.id] : 0;
         updateDisplay(current - task.step);
       });
 
       increaseButton.addEventListener('click', () => {
-        const current = typeof getWeekCounts(weekKey)[task.id] === 'number' ? getWeekCounts(weekKey)[task.id] : 0;
+        const current = typeof getWeekDayCounts(weekKey, todayKey)[task.id] === 'number' ? getWeekDayCounts(weekKey, todayKey)[task.id] : 0;
         updateDisplay(current + task.step);
       });
 
@@ -434,6 +533,7 @@
 
     function renderTasksForWeek(weekKey) {
       taskContainer.innerHTML = '';
+      const tasks = getStoredTasks();
       tasks.forEach(task => taskContainer.appendChild(createTaskCard(task, weekKey)));
     }
 
@@ -447,7 +547,7 @@
         weekPicker.append(option);
       });
 
-      const storedWeek = localStorage.getItem('weeklyTaskTrackerSelectedWeek');
+      const storedWeek = localStorage.getItem(selectedWeekKey);
       const defaultWeekKey = storedWeek || getWeekKey(weekStarts[0]);
       weekPicker.value = defaultWeekKey;
       renderTasksForWeek(weekPicker.value);
@@ -455,9 +555,14 @@
 
     weekPicker.addEventListener('change', () => {
       const selectedWeek = weekPicker.value;
-      localStorage.setItem('weeklyTaskTrackerSelectedWeek', selectedWeek);
+      localStorage.setItem(selectedWeekKey, selectedWeek);
       renderTasksForWeek(selectedWeek);
     });
+
+    const resetButton = document.getElementById('resetProgress');
+    if (resetButton) {
+      resetButton.addEventListener('click', resetCurrentDay);
+    }
 
     buildWeekPicker();
   </script>

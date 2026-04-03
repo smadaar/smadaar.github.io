@@ -101,6 +101,13 @@
       min-width: 180px;
     }
 
+    .bottom-actions {
+      display: grid;
+      gap: 12px;
+      margin: 24px 0 14px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
     .secondary-link {
       display: inline-flex;
       align-items: center;
@@ -273,6 +280,12 @@
         min-width: auto;
       }
     }
+
+    @media (max-width: 640px) {
+      .bottom-actions {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -281,10 +294,6 @@
       <div class="hero-header">
         <div>
           <h1>Weekly task tracker</h1>
-        </div>
-        <div class="hero-actions">
-          <a class="secondary-link" href="edit-tasks.html">Edit tasks</a>
-          <button id="resetProgress" class="btn">Reset today</button>
         </div>
         <div class="week-select-wrap">
           <label for="weekPicker">Select week</label>
@@ -296,6 +305,14 @@
 
     <p id="statusMessage" class="hint"></p>
     <div id="taskContainer"></div>
+
+    <div class="bottom-actions">
+      <a class="secondary-link" href="edit-tasks.html">Edit tasks</a>
+      <button id="resetProgress" class="btn">Reset today</button>
+      <button id="exportData" class="btn">Export data</button>
+      <button id="importData" class="btn">Import data</button>
+      <input id="importFile" type="file" accept="application/json" hidden>
+    </div>
 
     <aside class="footer">
       Your progress is saved in your browser automatically per selected week. Reloading restores your current counts for the week in focus.
@@ -316,7 +333,26 @@
         unitLabel: 'steps',
         target: 100000,
         type: 'min',
-        step: 1000
+        step: 1000,
+        bonusAlcohol: 2
+      },
+      {
+        id: 'exercise',
+        title: 'Exercise at least 240 mins',
+        unitLabel: 'mins',
+        target: 240,
+        type: 'min',
+        step: 30,
+        bonusAlcohol: 4
+      },
+      {
+        id: 'water',
+        title: 'Drink at least 4 pints of water per day',
+        unitLabel: 'pints',
+        target: 4,
+        type: 'min',
+        step: 1,
+        daily: true
       },
       {
         id: 'fruit',
@@ -363,7 +399,9 @@
           unitLabel: String(task.unitLabel || ''),
           target: Number.isFinite(Number(task.target)) ? Number(task.target) : 0,
           type: task.type === 'max' ? 'max' : 'min',
-          step: Number.isFinite(Number(task.step)) ? Number(task.step) : (task.id === 'steps' ? 1000 : 1)
+          step: Number.isFinite(Number(task.step)) ? Number(task.step) : (task.id === 'steps' ? 1000 : 1),
+          bonusAlcohol: Number.isFinite(Number(task.bonusAlcohol)) ? Number(task.bonusAlcohol) : 0,
+          daily: Boolean(task.daily)
         }));
       } catch (err) {
         localStorage.setItem(taskDefKey, JSON.stringify(defaultTasks));
@@ -463,7 +501,7 @@
         <div class="top-row">
           <div class="label-group">
             <h2 class="task-title">${task.title}</h2>
-            <p class="task-meta">Target: ${task.type === 'min' ? `at least ${task.target}` : `at most ${task.target}`} ${task.unitLabel}</p>
+            <p class="task-meta">${task.daily ? 'Daily target:' : 'Target:'} ${task.type === 'min' ? `at least ${task.target}` : `at most ${task.target}`} ${task.unitLabel}${task.daily ? ' (per day)' : ''}</p>
           </div>
           <div class="controls" aria-label="Adjust ${task.title}">
             <button class="btn decrease" aria-label="Decrease ${task.unitLabel}">−</button>
@@ -487,13 +525,27 @@
       const detailLabel = card.querySelector('.detail');
       const countLabel = card.querySelector('.count');
 
-      function updateDisplay(value) {
+      function getBonusAlcohol() {
+        if (task.id !== 'alcohol') return 0;
+        const allTasks = getStoredTasks();
+        const countsNow = getWeekDayCounts(weekKey, todayKey);
+        return allTasks.reduce((bonus, sourceTask) => {
+          if (!sourceTask.bonusAlcohol || sourceTask.id === 'alcohol') {
+            return bonus;
+          }
+          const sourceCount = countsNow[sourceTask.id] || 0;
+          const extra = Math.max(0, sourceCount - sourceTask.target);
+          const increments = Math.floor(extra / sourceTask.step);
+          return bonus + increments * sourceTask.bonusAlcohol;
+        }, 0);
+      }
+
+      function renderCard(value) {
         const safeValue = clamp(value, 0, task.type === 'min' ? Math.max(task.target, value) : Math.max(task.target, value));
-        const todayKey = getDateKey(new Date());
-        setWeekDayCount(weekKey, todayKey, task.id, safeValue);
+        const effectiveTarget = task.id === 'alcohol' ? task.target + getBonusAlcohol() : task.target;
         const progress = task.type === 'min'
           ? clamp((safeValue / task.target) * 100, 0, 100)
-          : clamp((1 - safeValue / task.target) * 100, 0, 100);
+          : clamp((1 - safeValue / effectiveTarget) * 100, 0, 100);
 
         progressBar.style.width = `${progress}%`;
         countLabel.textContent = `${safeValue} ${task.unitLabel}`;
@@ -504,30 +556,37 @@
             ? 'Nice work — goal complete!'
             : `${task.target - safeValue} ${task.unitLabel} to go`;
         } else {
-          currentLabel.textContent = safeValue <= task.target ? 'Under limit' : 'Over limit';
-          detailLabel.textContent = safeValue <= task.target
-            ? `${task.target - safeValue} ${task.unitLabel} remaining`
-            : `${safeValue - task.target} over the limit`;
+          currentLabel.textContent = safeValue <= effectiveTarget ? 'Under limit' : 'Over limit';
+          detailLabel.textContent = safeValue <= effectiveTarget
+            ? `${effectiveTarget - safeValue} ${task.unitLabel} remaining${task.id === 'alcohol' && effectiveTarget > task.target ? ` (${effectiveTarget - task.target} bonus units)` : ''}`
+            : `${safeValue - effectiveTarget} over the limit`;
         }
 
-        if (task.type === 'max' && safeValue > task.target) {
+        if (task.type === 'max' && safeValue > effectiveTarget) {
           progressBar.style.background = 'linear-gradient(90deg, rgba(255,136,136,0.95), rgba(255,96,96,0.95))';
         } else {
           progressBar.style.background = 'linear-gradient(90deg, rgba(124,226,255,0.95), rgba(141,123,255,0.9))';
         }
       }
 
+      function updateCount(value) {
+        const safeValue = clamp(value, 0, task.type === 'min' ? Math.max(task.target, value) : Math.max(task.target, value));
+        const todayKey = getDateKey(new Date());
+        setWeekDayCount(weekKey, todayKey, task.id, safeValue);
+        renderTasksForWeek(weekKey);
+      }
+
       decreaseButton.addEventListener('click', () => {
         const current = typeof getWeekDayCounts(weekKey, todayKey)[task.id] === 'number' ? getWeekDayCounts(weekKey, todayKey)[task.id] : 0;
-        updateDisplay(current - task.step);
+        updateCount(current - task.step);
       });
 
       increaseButton.addEventListener('click', () => {
         const current = typeof getWeekDayCounts(weekKey, todayKey)[task.id] === 'number' ? getWeekDayCounts(weekKey, todayKey)[task.id] : 0;
-        updateDisplay(current + task.step);
+        updateCount(current + task.step);
       });
 
-      updateDisplay(initialValue);
+      renderCard(initialValue);
       return card;
     }
 
@@ -560,8 +619,68 @@
     });
 
     const resetButton = document.getElementById('resetProgress');
+    const exportButton = document.getElementById('exportData');
+    const importButton = document.getElementById('importData');
+    const importFile = document.getElementById('importFile');
+
+    function exportAllData() {
+      const exportObject = {
+        taskDefinitions: getStoredTasks(),
+        progress: getPersistedData(),
+        selectedWeek: localStorage.getItem(selectedWeekKey) || null
+      };
+      const blob = new Blob([JSON.stringify(exportObject, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'weekly-task-tracker-data.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showStatusMessage('Data exported to JSON file.');
+    }
+
+    function importAllData(file) {
+      const reader = new FileReader();
+      reader.onload = event => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (imported) {
+            if (Array.isArray(imported.taskDefinitions)) {
+              localStorage.setItem(taskDefKey, JSON.stringify(imported.taskDefinitions));
+            }
+            if (imported.progress && typeof imported.progress === 'object') {
+              localStorage.setItem(storageKey, JSON.stringify(imported.progress));
+            }
+            if (typeof imported.selectedWeek === 'string') {
+              localStorage.setItem(selectedWeekKey, imported.selectedWeek);
+            }
+            renderTasksForWeek(weekPicker.value);
+            showStatusMessage('Data imported successfully.');
+          }
+        } catch (err) {
+          showStatusMessage('Could not import data: invalid JSON.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
     if (resetButton) {
       resetButton.addEventListener('click', resetCurrentDay);
+    }
+    if (exportButton) {
+      exportButton.addEventListener('click', exportAllData);
+    }
+    if (importButton && importFile) {
+      importButton.addEventListener('click', () => importFile.click());
+      importFile.addEventListener('change', event => {
+        const file = event.target.files[0];
+        if (file) {
+          importAllData(file);
+        }
+        importFile.value = '';
+      });
     }
 
     buildWeekPicker();

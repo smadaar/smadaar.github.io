@@ -342,6 +342,16 @@
             <input class="task-step" type="number" min="1" value="${task.step || 1}">
           </div>
           <div class="field">
+            <label>Bonus alcohol units</label>
+            <input class="task-bonus" type="number" min="0" value="${task.bonusAlcohol || 0}">
+          </div>
+          <div class="field">
+            <label>
+              <input class="task-daily" type="checkbox" ${task.daily ? 'checked' : ''}>
+              Daily task
+            </label>
+          </div>
+          <div class="field">
             <label>Track type</label>
             <select class="task-type">
               <option value="min" ${task.type !== 'max' ? 'selected' : ''}>Minimum goal</option>
@@ -376,9 +386,11 @@
         const unitLabel = row.querySelector('.task-unit').value.trim();
         const target = Number(row.querySelector('.task-target').value) || 0;
         const step = Number(row.querySelector('.task-step').value) || 1;
+        const bonusAlcohol = Number(row.querySelector('.task-bonus').value) || 0;
+        const daily = Boolean(row.querySelector('.task-daily').checked);
         const type = row.querySelector('.task-type').value;
         const id = idInput.value.trim() || slugify(title) || `task-${Date.now()}-${index}`;
-        return { id, title, unitLabel, target, type, step };
+        return { id, title, unitLabel, target, type, step, bonusAlcohol, daily };
       }).filter(task => task.title && task.unitLabel && task.target >= 0);
     }
 

@@ -129,6 +129,25 @@
       outline: none;
     }
 
+    .bottom-actions .btn {
+      width: auto;
+      min-height: 44px;
+      padding: 0.9rem 1.2rem;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      color: #eef2ff;
+      font-size: 1rem;
+      border-radius: 999px;
+      box-shadow: none;
+    }
+
+    .bottom-actions .btn:hover,
+    .bottom-actions .btn:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(124, 226, 255, 0.16);
+      outline: none;
+    }
+
     p.lead {
       margin: 0;
       max-width: 680px;
@@ -311,6 +330,7 @@
       <button id="resetProgress" class="btn">Reset today</button>
       <button id="exportData" class="btn">Export data</button>
       <button id="importData" class="btn">Import data</button>
+      <button id="clearStorage" class="btn">Clear all data</button>
       <input id="importFile" type="file" accept="application/json" hidden>
     </div>
 
@@ -334,7 +354,7 @@
         target: 100000,
         type: 'min',
         step: 1000,
-        bonusAlcohol: 2
+        bonusAlcohol: 1
       },
       {
         id: 'exercise',
@@ -343,7 +363,7 @@
         target: 240,
         type: 'min',
         step: 30,
-        bonusAlcohol: 4
+        bonusAlcohol: 3
       },
       {
         id: 'water',
@@ -666,6 +686,8 @@
       reader.readAsText(file);
     }
 
+    const clearButton = document.getElementById('clearStorage');
+
     if (resetButton) {
       resetButton.addEventListener('click', resetCurrentDay);
     }
@@ -680,6 +702,15 @@
           importAllData(file);
         }
         importFile.value = '';
+      });
+    }
+    if (clearButton) {
+      clearButton.addEventListener('click', () => {
+        const confirmed = window.confirm('Delete all locally saved task data? This cannot be undone.');
+        if (!confirmed) return;
+        localStorage.clear();
+        showStatusMessage('All local data cleared. Reloading page...');
+        setTimeout(() => window.location.reload(), 500);
       });
     }
 

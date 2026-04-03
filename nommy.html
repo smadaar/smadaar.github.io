@@ -1,313 +1,616 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nomination Whist</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nommy Score Sheet 2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<style>
-body {
-    margin: 0;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont;
-    background: radial-gradient(circle at top, #0b6623, #043d16);
-    color: white;
-}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
 
-h1 { text-align: center; margin: 10px 0; }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
 
-#setup {
-    padding: 15px;
-    max-width: 420px;
-    margin: auto;
-    background: #064d1a;
-    border-radius: 12px;
-}
+        .screen {
+            display: none;
+        }
 
-table {
-    border-collapse: collapse;
-    width: 100%;
-    background: #f5f5f5;
-    color: black;
-    font-size: 14px;
-}
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-th, td {
-    border: 1px solid #aaa;
-    padding: 6px;
-    text-align: center;
-}
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
 
-th {
-    position: sticky;
-    top: 0;
-    background: #ddd;
-}
+        h2 {
+            color: #764ba2;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
 
-.playerBtn {
-    background: none;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-}
+        .question {
+            color: #333;
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: 500;
+        }
 
-.dealer {
-    background: gold !important;
-}
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
 
-.nextDealer {
-    outline: 3px solid #ff9800;
-}
+        input[type="text"],
+        input[type="number"] {
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            width: 100%;
+            transition: border-color 0.3s;
+        }
 
-input {
-    width: 42px;
-    font-size: 16px;
-    text-align: center;
-}
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
 
-.correct { background: #b6f2b6; font-weight: bold; }
-.incorrect { background: #f6b0b0; font-weight: bold; }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
 
-.invalidRow td {
-    background: #ffcccc !important;
-}
+        button {
+            padding: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #667eea;
+            color: white;
+        }
 
-.hidden { display: none; }
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
 
-/* ---------- KEYPAD ---------- */
-#keypad {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #222;
-    padding: 10px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    z-index: 10;
-}
+        button:active {
+            transform: translateY(0);
+        }
 
-#keypad button {
-    font-size: 22px;
-    padding: 16px;
-    border-radius: 10px;
-    border: none;
-}
+        button.secondary {
+            background: #ddd;
+            color: #333;
+        }
 
-#keypad button.clear {
-    grid-column: span 3;
-    background: #f6b0b0;
-}
-</style>
-</head>
+        button.secondary:hover {
+            background: #bbb;
+        }
 
-<body>
+        .number-button {
+            min-height: 70px;
+            font-size: 24px;
+        }
 
-<h1>Nomination Whist</h1>
+        .scoresheet {
+            margin: 20px 0;
+            overflow-x: auto;
+        }
 
-<div id="setup">
-    Players:
-    <select id="playerCount">
-        <option>3</option><option selected>4</option><option>5</option>
-        <option>6</option><option>7</option><option>8</option>
-    </select>
-    <div id="playerNames"></div>
-    <button onclick="startGame()">Start Game</button>
-</div>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
 
-<div id="game" class="hidden">
-    <table id="scoresheet"></table>
-</div>
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
 
-<div id="keypad" class="hidden">
-    <button onclick="pressKey(1)">1</button>
-    <button onclick="pressKey(2)">2</button>
-    <button onclick="pressKey(3)">3</button>
-    <button onclick="pressKey(4)">4</button>
-    <button onclick="pressKey(5)">5</button>
-    <button onclick="pressKey(6)">6</button>
-    <button onclick="pressKey(7)">7</button>
-    <button onclick="pressKey(8)">8</button>
-    <button class="clear" onclick="clearKey()">Clear</button>
-</div>
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
 
-<script>
-let playerCount = 0;
-let activeInput = null;
-let dealerIndex = 0;
-let completedRounds = 0;
+        tr:nth-child(even) {
+            background: #f5f5f5;
+        }
 
-function maxHand(p) {
-    return Math.min(8, Math.floor(52 / p));
-}
+        .round-label {
+            font-weight: bold;
+            background: #f0f0f0;
+        }
 
-function buildRounds(p) {
-    const m = maxHand(p);
-    const r = [];
-    for (let i = m; i >= 1; i--) r.push(i);
-    r.push(1);
-    for (let i = 2; i <= m; i++) r.push(i);
-    return r;
-}
+        .player-name {
+            font-weight: bold;
+            color: #667eea;
+        }
 
-function label(v) {
-    if (v === 3) return "B";
-    if (v === 4) return "NT";
-    return v;
-}
+        .current-score {
+            background: #fff3cd;
+            font-weight: bold;
+        }
 
-function roundValue(v) {
-    if (v === "B") return 3;
-    if (v === "NT") return 4;
-    return Number(v);
-}
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
+        }
 
-document.getElementById("playerCount").onchange = updateNames;
-updateNames();
+        label {
+            color: #333;
+            font-weight: 500;
+            font-size: 16px;
+        }
 
-function updateNames() {
-    const c = Number(document.getElementById("playerCount").value);
-    const d = document.getElementById("playerNames");
-    d.innerHTML = "";
-    for (let i = 0; i < c; i++) {
-        d.innerHTML += `Player ${i+1}: <input id="n${i}" value="Player ${i+1}"><br>`;
-    }
-}
+        .info-text {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+            margin: 10px 0;
+        }
 
-function startGame() {
-    playerCount = Number(document.getElementById("playerCount").value);
-    const names = [...Array(playerCount)].map((_,i)=>document.getElementById(`n${i}`).value);
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
 
-    document.getElementById("setup").classList.add("hidden");
-    document.getElementById("game").classList.remove("hidden");
+        .button-row button {
+            flex: 1;
+        }
 
-    buildTable(names, buildRounds(playerCount));
-    updateDealerHighlight();
-}
+        .hidden {
+            display: none;
+        }
 
-function buildTable(names, rounds) {
-    const t = document.getElementById("scoresheet");
-    t.innerHTML = "";
+        .player-header {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+            font-weight: bold;
+            color: #667eea;
+            padding: 20px 5px;
+            height: 200px;
+            white-space: nowrap;
+        }
 
-    let h1 = "<tr><th rowspan=2>Round</th>";
-    names.forEach((n,i) => {
-        h1 += `<th colspan=4>
-            <button class="playerBtn" onclick="setDealer(${i})" id="playerHeader${i}">
-                ${n}
-            </button>
-        </th>`;
-    });
-    t.innerHTML += h1 + "</tr>";
+        .round-row {
+            text-align: center;
+        }
 
-    let h2 = "<tr>";
-    names.forEach(()=> h2 += "<th>Bid</th><th>Won</th><th>Score</th><th>Total</th>");
-    t.innerHTML += h2 + "</tr>";
-
-    rounds.forEach(r => {
-        let row = `<tr data-round="${roundValue(label(r))}"><td><b>${label(r)}</b></td>`;
-        names.forEach(()=> row += `
-            <td><input inputmode="none" onfocus="focusIn(this)"></td>
-            <td><input inputmode="none" onfocus="focusIn(this)"></td>
-            <td class="roundScore">0</td>
-            <td class="totalScore">0</td>
-        `);
-        t.innerHTML += row + "</tr>";
-    });
-}
-
-function setDealer(i) {
-    dealerIndex = i;
-    completedRounds = 0;
-    updateDealerHighlight();
-}
-
-function updateDealerHighlight() {
-    document.querySelectorAll(".playerBtn").forEach((b,i)=>{
-        b.classList.remove("dealer","nextDealer");
-        if (i === dealerIndex) b.classList.add("dealer");
-        if (i === (dealerIndex + completedRounds + 1) % playerCount)
-            b.classList.add("nextDealer");
-    });
-}
-
-function focusIn(el) {
-    activeInput = el;
-    document.getElementById("keypad").classList.remove("hidden");
-}
-
-function pressKey(n) {
-    if (!activeInput) return;
-    activeInput.value = n;
-    moveNext(activeInput);
-    calc();
-}
-
-function clearKey() {
-    if (!activeInput) return;
-    activeInput.value = "";
-    calc();
-}
-
-function moveNext(el) {
-    const row = el.closest("tr");
-    const inputs = [...row.querySelectorAll("input")];
-
-    const bidInputs = inputs.filter((_,i)=> i % 2 === 0);
-    const wonInputs = inputs.filter((_,i)=> i % 2 === 1);
-    const order = [...bidInputs, ...wonInputs];
-
-    const idx = order.indexOf(el);
-    if (idx >= 0 && idx < order.length - 1) order[idx + 1].focus();
-}
-
-function calc() {
-    const rows = document.querySelectorAll("#scoresheet tr");
-    const totals = Array(playerCount).fill(0);
-    completedRounds = 0;
-
-    for (let r = 2; r < rows.length; r++) {
-        const row = rows[r];
-        const roundTotal = Number(row.dataset.round);
-        const inputs = [...row.querySelectorAll("input")];
-
-        let wonSum = 0;
-        let allWonFilled = true;
-
-        row.classList.remove("invalidRow");
-
-        for (let p = 0; p < playerCount; p++) {
-            const bid = Number(inputs[p*2].value || 0);
-            const wonInput = inputs[p*2 + 1];
-            const won = Number(wonInput.value || 0);
-
-            if (wonInput.value === "") allWonFilled = false;
-            wonSum += won;
-
-            let score = won;
-            const sc = row.children[1 + p*4 + 2];
-            sc.classList.remove("correct","incorrect");
-
-            if (bid === won && wonInput.value !== "") {
-                score += 10;
-                sc.classList.add("correct");
-            } else if (wonInput.value !== "") {
-                sc.classList.add("incorrect");
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                min-height: 100vh;
             }
 
-            sc.textContent = score;
-            totals[p] += score;
-            row.children[1 + p*4 + 3].textContent = totals[p];
+            h1, h2 {
+                font-size: 22px;
+            }
+
+            .question {
+                font-size: 16px;
+            }
+
+            .number-button {
+                min-height: 60px;
+                font-size: 20px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Screen 1: Number of Players -->
+        <div id="numPlayersScreen" class="screen active">
+            <h1>🎴 Nommy</h1>
+            <div class="question">How many players?</div>
+            <div class="button-grid">
+                <button class="number-button" onclick="setNumPlayers(2)">2</button>
+                <button class="number-button" onclick="setNumPlayers(3)">3</button>
+                <button class="number-button" onclick="setNumPlayers(4)">4</button>
+                <button class="number-button" onclick="setNumPlayers(5)">5</button>
+                <button class="number-button" onclick="setNumPlayers(6)">6</button>
+            </div>
+        </div>
+
+        <!-- Screen 2: Player Names -->
+        <div id="playerNamesScreen" class="screen">
+            <h1>🎴 Nommy</h1>
+            <h2>Player Names</h2>
+            <div id="namesContainer"></div>
+            <button onclick="startGame()" style="margin-top: 20px;">Start Game</button>
+        </div>
+
+        <!-- Screen 3: Bidding & Winning -->
+        <div id="gameScreen" class="screen">
+            <h2 id="roundTitle"></h2>
+            <div id="gameContent"></div>
+        </div>
+
+        <!-- Screen 4: Round Scoresheet -->
+        <div id="roundScoresheetScreen" class="screen">
+            <h2 id="roundScoresheetTitle"></h2>
+            <div id="roundScoresheetContent"></div>
+            <button id="nextRoundBtn" onclick="nextRound()" style="margin-top: 20px;">Next Round</button>
+        </div>
+
+        <!-- Screen 5: Full Scoresheet -->
+        <div id="scoresheetScreen" class="screen">
+            <h2>Final Scoresheet</h2>
+            <div id="scoresheetContent"></div>
+            <button onclick="location.reload()" style="margin-top: 20px;">New Game</button>
+        </div>
+    </div>
+
+    <script>
+        const ROUNDS = [
+            { label: '8H', cards: 8 },
+            { label: '7C', cards: 7 },
+            { label: '6D', cards: 6 },
+            { label: '5S', cards: 5 },
+            { label: '4N', cards: 4 },
+            { label: '3B', cards: 3 },
+            { label: '2H', cards: 2 },
+            { label: '1C', cards: 1 },
+            { label: '1D', cards: 1 },
+            { label: '2S', cards: 2 },
+            { label: '3B', cards: 3 },
+            { label: '4N', cards: 4 },
+            { label: '5H', cards: 5 },
+            { label: '6C', cards: 6 },
+            { label: '7D', cards: 7 },
+            { label: '8S', cards: 8 }
+        ];
+
+        let gameState = {
+            numPlayers: 0,
+            players: [],
+            currentRound: 0,
+            currentPhase: 'bid', // 'bid' or 'won'
+            currentPlayerIndex: 0,
+            scores: {}, // { playerName: { bids: [], won: [], scores: [] } }
+        };
+
+        function setNumPlayers(num) {
+            gameState.numPlayers = num;
+            showScreen('playerNamesScreen');
+            initializeNameInputs();
         }
 
-        if (allWonFilled) {
-            if (wonSum !== roundTotal) row.classList.add("invalidRow");
-            completedRounds++;
+        function initializeNameInputs() {
+            const container = document.getElementById('namesContainer');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < gameState.numPlayers; i++) {
+                const formGroup = document.createElement('div');
+                formGroup.className = 'form-group';
+                formGroup.innerHTML = `
+                    <label>Player ${i + 1} Name:</label>
+                    <input type="text" id="player${i}" placeholder="Enter name" value="Player ${i + 1}">
+                `;
+                container.appendChild(formGroup);
+            }
         }
-    }
 
-    updateDealerHighlight();
-}
-</script>
+        function startGame() {
+            gameState.players = [];
+            gameState.scores = {};
 
+            for (let i = 0; i < gameState.numPlayers; i++) {
+                const name = document.getElementById(`player${i}`).value.trim() || `Player ${i + 1}`;
+                gameState.players.push(name);
+                gameState.scores[name] = {
+                    bids: [],
+                    won: [],
+                    scores: []
+                };
+            }
+
+            gameState.currentRound = 0;
+            gameState.currentPhase = 'bid';
+            gameState.currentPlayerIndex = 0;
+
+            showScreen('gameScreen');
+            showGamePhase();
+        }
+
+        function showGamePhase() {
+            const roundInfo = ROUNDS[gameState.currentRound];
+            const gameContent = document.getElementById('gameContent');
+            const roundTitle = document.getElementById('roundTitle');
+            const playerName = gameState.players[gameState.currentPlayerIndex];
+
+            roundTitle.textContent = `Round ${gameState.currentRound + 1}: ${roundInfo.label} (${roundInfo.cards} cards)`;
+
+            if (gameState.currentPhase === 'bid') {
+                gameContent.innerHTML = `
+                    <div class="question">${playerName}, how many will you bid?</div>
+                    <div class="info-text">Max: ${roundInfo.cards}</div>
+                    <div class="button-grid" id="optionsGrid"></div>
+                `;
+                
+                const optionsGrid = document.getElementById('optionsGrid');
+                optionsGrid.innerHTML = '';
+                
+                // Special rule for last player: cannot make total equal to trick count
+                const isLastPlayer = gameState.currentPlayerIndex === gameState.numPlayers - 1;
+                const otherBidsTotal = gameState.scores[playerName].bids.slice(gameState.currentRound, gameState.currentRound + 1).length === 0
+                    ? gameState.players.slice(0, gameState.currentPlayerIndex)
+                        .reduce((sum, p) => sum + (gameState.scores[p].bids[gameState.currentRound] || 0), 0)
+                    : 0;
+
+                for (let i = 0; i <= roundInfo.cards; i++) {
+                    const isDisabled = isLastPlayer && (otherBidsTotal + i === roundInfo.cards);
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.className = 'number-button';
+                    if (isDisabled) {
+                        button.disabled = true;
+                        button.style.opacity = '0.5';
+                        button.style.cursor = 'not-allowed';
+                    }
+                    button.onclick = () => recordBid(i);
+                    optionsGrid.appendChild(button);
+                }
+            } else if (gameState.currentPhase === 'won') {
+                const maxCards = roundInfo.cards;
+                gameContent.innerHTML = `
+                    <div class="question">${playerName}, how many did you win?</div>
+                    <div class="info-text">Max: ${maxCards}</div>
+                    <div class="button-grid" id="optionsGrid"></div>
+                `;
+                
+                const optionsGrid = document.getElementById('optionsGrid');
+                optionsGrid.innerHTML = '';
+                
+                for (let i = 0; i <= maxCards; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.className = 'number-button';
+                    button.onclick = () => recordWon(i);
+                    optionsGrid.appendChild(button);
+                }
+            }
+        }
+
+        function recordBid(bid) {
+            const playerName = gameState.players[gameState.currentPlayerIndex];
+            
+            // Ensure the arrays have enough entries
+            while (gameState.scores[playerName].bids.length <= gameState.currentRound) {
+                gameState.scores[playerName].bids.push(0);
+            }
+            
+            gameState.scores[playerName].bids[gameState.currentRound] = bid;
+
+            if (gameState.currentPlayerIndex < gameState.numPlayers - 1) {
+                gameState.currentPlayerIndex++;
+            } else {
+                // All players have bid, now ask for won
+                gameState.currentPhase = 'won';
+                gameState.currentPlayerIndex = 0;
+            }
+
+            showGamePhase();
+        }
+
+        function recordWon(won) {
+            const playerName = gameState.players[gameState.currentPlayerIndex];
+            
+            // Ensure the arrays have enough entries
+            while (gameState.scores[playerName].won.length <= gameState.currentRound) {
+                gameState.scores[playerName].won.push(0);
+            }
+            
+            gameState.scores[playerName].won[gameState.currentRound] = won;
+
+            if (gameState.currentPlayerIndex < gameState.numPlayers - 1) {
+                gameState.currentPlayerIndex++;
+                showGamePhase();
+            } else {
+                // All players have entered won, calculate scores and show round scoresheet
+                calculateRoundScores();
+                showRoundScoresheet();
+            }
+        }
+
+        function nextRound() {
+            if (gameState.currentRound < ROUNDS.length - 1) {
+                // More rounds to play
+                gameState.currentRound++;
+                gameState.currentPhase = 'bid';
+                gameState.currentPlayerIndex = 0;
+                showScreen('gameScreen');
+                showGamePhase();
+            } else {
+                // Game over, show final scoresheet
+                showFinalScoresheet();
+            }
+        }
+
+        function calculateRoundScores() {
+            const roundInfo = ROUNDS[gameState.currentRound];
+            
+            gameState.players.forEach(playerName => {
+                const bid = gameState.scores[playerName].bids[gameState.currentRound];
+                const won = gameState.scores[playerName].won[gameState.currentRound];
+                let roundScore = won; // 1 point per trick won
+                
+                if (bid === won) {
+                    roundScore += 10; // Bonus for matching bid
+                }
+                
+                // Ensure scores array has enough entries
+                while (gameState.scores[playerName].scores.length <= gameState.currentRound) {
+                    gameState.scores[playerName].scores.push(0);
+                }
+                
+                gameState.scores[playerName].scores[gameState.currentRound] = roundScore;
+            });
+        }
+
+        function showRoundScoresheet() {
+            showScreen('roundScoresheetScreen');
+            const roundInfo = ROUNDS[gameState.currentRound];
+            const roundScoresheetTitle = document.getElementById('roundScoresheetTitle');
+            const roundScoresheetContent = document.getElementById('roundScoresheetContent');
+            
+            roundScoresheetTitle.textContent = `Round ${gameState.currentRound + 1}: ${roundInfo.label} Complete`;
+            
+            let html = '<div class="scoresheet"><table><thead><tr><th>Player</th><th>Bid</th><th>Won</th><th>Score</th><th>Total</th></tr></thead><tbody>';
+            
+            let totals = {};
+            gameState.players.forEach(p => {
+                totals[p] = 0;
+                for (let i = 0; i <= gameState.currentRound; i++) {
+                    if (typeof gameState.scores[p].scores[i] === 'number') {
+                        totals[p] += gameState.scores[p].scores[i];
+                    }
+                }
+            });
+            
+            gameState.players.forEach(playerName => {
+                const bid = gameState.scores[playerName].bids[gameState.currentRound];
+                const won = gameState.scores[playerName].won[gameState.currentRound];
+                const roundScore = gameState.scores[playerName].scores[gameState.currentRound];
+                
+                html += `<tr>
+                    <td class="player-name">${playerName}</td>
+                    <td>${bid}</td>
+                    <td>${won}</td>
+                    <td>${roundScore}</td>
+                    <td class="current-score">${totals[playerName]}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            roundScoresheetContent.innerHTML = html;
+
+            // Update next round button text
+            const nextRoundBtn = document.getElementById('nextRoundBtn');
+            if (gameState.currentRound === ROUNDS.length - 1) {
+                nextRoundBtn.textContent = 'Show Final Results';
+            } else {
+                nextRoundBtn.textContent = 'Next Round';
+            }
+        }
+
+        function showFinalScoresheet() {
+            showScreen('scoresheetScreen');
+            const scoresheetContent = document.getElementById('scoresheetContent');
+            
+            let html = '<div class="scoresheet"><table><thead><tr><th style="width: 80px;">Round</th>';
+            
+            gameState.players.forEach(player => {
+                html += `<th class="player-header">${player}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            let totals = {};
+            gameState.players.forEach(p => totals[p] = 0);
+            
+            ROUNDS.forEach((round, roundIndex) => {
+                html += `<tr class="round-row"><td class="round-label">${round.label}</td>`;
+                
+                gameState.players.forEach(playerName => {
+                    const bid = gameState.scores[playerName].bids[roundIndex] || '-';
+                    const won = gameState.scores[playerName].won[roundIndex] || '-';
+                    const score = gameState.scores[playerName].scores[roundIndex] || '-';
+                    
+                    if (typeof score === 'number') {
+                        totals[playerName] += score;
+                    }
+                    
+                    const cellContent = typeof score === 'number' ? `B:${bid}<br>W:${won}<br><strong>${score}</strong>` : '-';
+                    html += `<td>${cellContent}</td>`;
+                });
+                
+                html += '</tr>';
+            });
+            
+            html += '<tr style="background: #e8e8ff; font-weight: bold; font-size: 16px;"><td>TOTAL</td>';
+            gameState.players.forEach(playerName => {
+                html += `<td class="current-score">${totals[playerName]}</td>`;
+            });
+            html += '</tr>';
+            
+            html += '</tbody></table></div>';
+            
+            // Winner announcement
+            let maxScore = Math.max(...Object.values(totals));
+            let winners = Object.entries(totals).filter(([_, score]) => score === maxScore).map(([name, _]) => name);
+            
+            let winnerHtml = '<div style="margin-top: 20px; text-align: center; font-size: 18px; font-weight: bold; color: #667eea;">';
+            if (winners.length === 1) {
+                winnerHtml += `🏆 ${winners[0]} wins with ${maxScore} points! 🏆`;
+            } else {
+                winnerHtml += `🏆 Tie! ${winners.join(', ')} with ${maxScore} points! 🏆`;
+            }
+            winnerHtml += '</div>';
+            
+            scoresheetContent.innerHTML = html + winnerHtml;
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+    </script>
 </body>
 </html>

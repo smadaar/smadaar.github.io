@@ -1,0 +1,465 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Task Tracker</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      color: #eef2ff;
+      background: radial-gradient(circle at top, #3b4f9f, #0a1225 45%);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, rgba(124, 226, 255, 0.24), transparent 22%),
+                  radial-gradient(circle at bottom right, rgba(141, 123, 255, 0.18), transparent 26%),
+                  radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.04), transparent 20%),
+                  #07111f;
+      color: #eef2ff;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(135deg, rgba(255,255,255,.04) 0%, rgba(255,255,255,0) 100%);
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    main {
+      position: relative;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+      z-index: 1;
+    }
+
+    .hero {
+      display: grid;
+      gap: 18px;
+      margin-bottom: 28px;
+      padding: 26px 24px 26px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+    }
+
+    .hero-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.1rem);
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+    }
+
+    .week-select-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 230px;
+    }
+
+    .week-select-wrap label {
+      font-size: 0.95rem;
+      color: rgba(238, 242, 255, 0.76);
+    }
+
+    .week-select {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.1);
+      color: #f4f7ff;
+      padding: 12px 14px;
+      border-radius: 18px;
+      font-size: 1rem;
+      cursor: pointer;
+      outline: none;
+    }
+
+    p.lead {
+      margin: 0;
+      max-width: 680px;
+      color: rgba(238, 242, 255, 0.78);
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    .card {
+      display: grid;
+      gap: 18px;
+      padding: 22px;
+      margin-bottom: 20px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+    }
+
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .label-group {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .task-title {
+      margin: 0 0 6px;
+      font-size: 1.05rem;
+      line-height: 1.2;
+    }
+
+    .task-meta {
+      margin: 0;
+      color: rgba(238, 242, 255, 0.70);
+      font-size: 0.96rem;
+      line-height: 1.6;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      color: #f8fbff;
+      font-size: 1.45rem;
+      cursor: pointer;
+      transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+    }
+
+    .btn:hover,
+    .btn:focus-visible {
+      transform: translateY(-2px);
+      background: rgba(124, 226, 255, 0.18);
+      outline: none;
+    }
+
+    .count {
+      min-width: 90px;
+      font-weight: 700;
+      text-align: center;
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    .progress {
+      width: 100%;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.07);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(124, 226, 255, 0.95), rgba(141, 123, 255, 0.9));
+      transition: width 0.25s ease, background 0.25s ease;
+    }
+
+    .status {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      color: rgba(238, 242, 255, 0.76);
+      font-size: 0.96rem;
+      margin: 0;
+      flex-wrap: wrap;
+    }
+
+    .status .tag {
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .hint {
+      font-size: 0.95rem;
+      color: rgba(238, 242, 255, 0.65);
+      margin: 0;
+    }
+
+    .footer {
+      margin-top: 16px;
+      padding: 16px 20px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      color: rgba(238, 242, 255, 0.72);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 540px) {
+      main {
+        padding: 20px 16px 32px;
+      }
+
+      .hero-header {
+        align-items: stretch;
+      }
+
+      .controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .count {
+        width: 100%;
+        min-width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="hero-header">
+        <div>
+          <h1>Weekly task tracker</h1>
+        </div>
+        <div class="week-select-wrap">
+          <label for="weekPicker">Select week</label>
+          <select id="weekPicker" class="week-select"></select>
+        </div>
+      </div>
+      <p class="lead">Track your weekly goals with browser cache persistence. Choose a week, update the counters, and enjoy a sleek mobile-friendly experience.</p>
+    </section>
+
+    <div id="taskContainer"></div>
+
+    <aside class="footer">
+      Your progress is saved in your browser automatically per selected week. Reloading restores your current counts for the week in focus.
+    </aside>
+  </main>
+
+  <script>
+    const storageKey = 'weeklyTaskTrackerCounts';
+    const weekPicker = document.getElementById('weekPicker');
+    const taskContainer = document.getElementById('taskContainer');
+
+    const tasks = [
+      {
+        id: 'steps',
+        title: 'Walk at least 100,000 steps',
+        unitLabel: 'steps',
+        target: 100000,
+        type: 'min',
+        step: 5000
+      },
+      {
+        id: 'fruit',
+        title: 'Eat at least 25 pieces of fruit',
+        unitLabel: 'fruit',
+        target: 25,
+        type: 'min',
+        step: 1
+      },
+      {
+        id: 'alcohol',
+        title: 'Drink no more than 25 alcohol units',
+        unitLabel: 'units',
+        target: 25,
+        type: 'max',
+        step: 1
+      }
+    ];
+
+    function startOfWeek(date) {
+      const copy = new Date(date);
+      const day = copy.getDay();
+      const diff = (day + 6) % 7;
+      copy.setDate(copy.getDate() - diff);
+      copy.setHours(0, 0, 0, 0);
+      return copy;
+    }
+
+    function formatWeekRange(startDate) {
+      const options = { month: 'short', day: 'numeric' };
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 6);
+      return `${startDate.toLocaleDateString('en-US', options)} – ${endDate.toLocaleDateString('en-US', options)}`;
+    }
+
+    function getWeekKey(startDate) {
+      return `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+    }
+
+    function generateWeekOptions() {
+      const weeks = [];
+      const start = new Date(2026, 3, 6);
+      for (let i = 0; i < 12; i++) {
+        const weekStart = new Date(start);
+        weekStart.setDate(start.getDate() + i * 7);
+        weeks.push(weekStart);
+      }
+      return weeks;
+    }
+
+    function getPersistedData() {
+      return JSON.parse(localStorage.getItem(storageKey) || '{}');
+    }
+
+    function setPersistedData(data) {
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    }
+
+    function getWeekCounts(weekKey) {
+      const storage = getPersistedData();
+      return storage[weekKey] || {};
+    }
+
+    function setWeekCount(weekKey, taskId, value) {
+      const storage = getPersistedData();
+      storage[weekKey] = storage[weekKey] || {};
+      storage[weekKey][taskId] = value;
+      setPersistedData(storage);
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function createTaskCard(task, weekKey) {
+      const counts = getWeekCounts(weekKey);
+      const initialValue = typeof counts[task.id] === 'number' ? counts[task.id] : 0;
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="top-row">
+          <div class="label-group">
+            <h2 class="task-title">${task.title}</h2>
+            <p class="task-meta">Target: ${task.type === 'min' ? `at least ${task.target}` : `at most ${task.target}`} ${task.unitLabel}</p>
+          </div>
+          <div class="controls" aria-label="Adjust ${task.title}">
+            <button class="btn decrease" aria-label="Decrease ${task.unitLabel}">−</button>
+            <div class="count" aria-live="polite">${initialValue} ${task.unitLabel}</div>
+            <button class="btn increase" aria-label="Increase ${task.unitLabel}">+</button>
+          </div>
+        </div>
+        <div class="progress" aria-hidden="true">
+          <div class="progress-bar" style="width: 0%"></div>
+        </div>
+        <div class="status">
+          <span class="tag current"></span>
+          <span class="tag detail"></span>
+        </div>
+      `;
+
+      const decreaseButton = card.querySelector('.decrease');
+      const increaseButton = card.querySelector('.increase');
+      const progressBar = card.querySelector('.progress-bar');
+      const currentLabel = card.querySelector('.current');
+      const detailLabel = card.querySelector('.detail');
+      const countLabel = card.querySelector('.count');
+
+      function updateDisplay(value) {
+        const safeValue = clamp(value, 0, task.type === 'min' ? Math.max(task.target, value) : Math.max(task.target, value));
+        setWeekCount(weekKey, task.id, safeValue);
+        const progress = task.type === 'min'
+          ? clamp((safeValue / task.target) * 100, 0, 100)
+          : clamp((1 - safeValue / task.target) * 100, 0, 100);
+
+        progressBar.style.width = `${progress}%`;
+        countLabel.textContent = `${safeValue} ${task.unitLabel}`;
+
+        if (task.type === 'min') {
+          currentLabel.textContent = safeValue >= task.target ? 'Goal reached' : 'Progress';
+          detailLabel.textContent = safeValue >= task.target
+            ? 'Nice work — goal complete!'
+            : `${task.target - safeValue} ${task.unitLabel} to go`;
+        } else {
+          currentLabel.textContent = safeValue <= task.target ? 'Under limit' : 'Over limit';
+          detailLabel.textContent = safeValue <= task.target
+            ? `${task.target - safeValue} ${task.unitLabel} remaining`
+            : `${safeValue - task.target} over the limit`;
+        }
+
+        if (task.type === 'max' && safeValue > task.target) {
+          progressBar.style.background = 'linear-gradient(90deg, rgba(255,136,136,0.95), rgba(255,96,96,0.95))';
+        } else {
+          progressBar.style.background = 'linear-gradient(90deg, rgba(124,226,255,0.95), rgba(141,123,255,0.9))';
+        }
+      }
+
+      decreaseButton.addEventListener('click', () => {
+        const current = typeof getWeekCounts(weekKey)[task.id] === 'number' ? getWeekCounts(weekKey)[task.id] : 0;
+        updateDisplay(current - task.step);
+      });
+
+      increaseButton.addEventListener('click', () => {
+        const current = typeof getWeekCounts(weekKey)[task.id] === 'number' ? getWeekCounts(weekKey)[task.id] : 0;
+        updateDisplay(current + task.step);
+      });
+
+      updateDisplay(initialValue);
+      return card;
+    }
+
+    function renderTasksForWeek(weekKey) {
+      taskContainer.innerHTML = '';
+      tasks.forEach(task => taskContainer.appendChild(createTaskCard(task, weekKey)));
+    }
+
+    function buildWeekPicker() {
+      const weekStarts = generateWeekOptions();
+      weekStarts.forEach((weekStart, index) => {
+        const option = document.createElement('option');
+        const weekKey = getWeekKey(weekStart);
+        option.value = weekKey;
+        option.textContent = `Week ${index + 1}: ${formatWeekRange(weekStart)}`;
+        weekPicker.append(option);
+      });
+
+      const storedWeek = localStorage.getItem('weeklyTaskTrackerSelectedWeek');
+      const defaultWeekKey = storedWeek || getWeekKey(weekStarts[0]);
+      weekPicker.value = defaultWeekKey;
+      renderTasksForWeek(weekPicker.value);
+    }
+
+    weekPicker.addEventListener('change', () => {
+      const selectedWeek = weekPicker.value;
+      localStorage.setItem('weeklyTaskTrackerSelectedWeek', selectedWeek);
+      renderTasksForWeek(selectedWeek);
+    });
+
+    buildWeekPicker();
+  </script>
+</body>
+</html>

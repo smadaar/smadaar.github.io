@@ -319,7 +319,6 @@
           <select id="weekPicker" class="week-select"></select>
         </div>
       </div>
-      <p class="lead">Track your weekly goals with browser cache persistence. Choose a week, update the counters, and enjoy a sleek mobile-friendly experience.</p>
     </section>
 
     <p id="statusMessage" class="hint"></p>
@@ -451,7 +450,7 @@
 
     function generateWeekOptions() {
       const weeks = [];
-      const start = new Date(2026, 3, 6);
+      const start = new Date(2026, 2, 30);
       for (let i = 0; i < 12; i++) {
         const weekStart = new Date(start);
         weekStart.setDate(start.getDate() + i * 7);

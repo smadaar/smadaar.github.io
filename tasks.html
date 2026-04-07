@@ -170,15 +170,15 @@
 
     .top-row {
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: flex-start;
-      gap: 14px;
-      flex-wrap: wrap;
+      gap: 12px;
     }
 
     .label-group {
       min-width: 0;
       flex: 1;
+      width: 100%;
     }
 
     .task-title {
@@ -198,7 +198,7 @@
       display: flex;
       gap: 12px;
       align-items: center;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
     }
 
     .btn {
@@ -325,6 +325,9 @@
           <label for="weekPicker">Select week</label>
           <select id="weekPicker" class="week-select"></select>
         </div>
+      </div>
+      <div id="completionStatus" style="text-align: center; font-size: 1rem; color: rgba(238, 242, 255, 0.78);">
+        <strong id="tasksCompleted">0</strong> of <strong id="tasksTotal">0</strong> tasks complete
       </div>
     </section>
 
@@ -667,6 +670,75 @@
       taskContainer.innerHTML = '';
       const tasks = getStoredTasks();
       tasks.forEach(task => taskContainer.appendChild(createTaskCard(task, weekKey)));
+      
+      // Update completion status
+      updateCompletionStatus(weekKey, tasks);
+    }
+
+    function updateCompletionStatus(weekKey, tasks) {
+      const storage = getPersistedData();
+      let completed = 0;
+      
+      tasks.forEach(task => {
+        let taskValue = 0;
+        if (task.daily) {
+          const todayKey = getDateKey(getToday());
+          const counts = getWeekDayCounts(weekKey, todayKey);
+          taskValue = typeof counts[task.id] === 'number' ? counts[task.id] : 0;
+        } else {
+          // Sum all days in the week for this task
+          if (storage[weekKey]) {
+            for (const dayKey in storage[weekKey]) {
+              const dayCount = storage[weekKey][dayKey][task.id];
+              if (typeof dayCount === 'number') {
+                taskValue += dayCount;
+              }
+            }
+          }
+        }
+        
+        // Check if task is complete
+        let isComplete = false;
+        if (task.id === 'alcohol') {
+          // For alcohol, calculate bonus first
+          let bonusAlcohol = 0;
+          tasks.forEach(sourceTask => {
+            if (!sourceTask.bonusAlcohol || sourceTask.id === 'alcohol') {
+              return;
+            }
+            
+            let sourceCount = 0;
+            if (sourceTask.daily) {
+              const todayKey = getDateKey(getToday());
+              const counts = getWeekDayCounts(weekKey, todayKey);
+              sourceCount = counts[sourceTask.id] || 0;
+            } else {
+              if (storage[weekKey]) {
+                for (const dayKey in storage[weekKey]) {
+                  const dayCount = storage[weekKey][dayKey][sourceTask.id];
+                  if (typeof dayCount === 'number') {
+                    sourceCount += dayCount;
+                  }
+                }
+              }
+            }
+            
+            const extra = Math.max(0, sourceCount - sourceTask.target);
+            const increments = Math.floor(extra / sourceTask.step);
+            bonusAlcohol += increments * sourceTask.bonusAlcohol;
+          });
+          isComplete = taskValue <= task.target + bonusAlcohol;
+        } else if (task.type === 'min') {
+          isComplete = taskValue >= task.target;
+        } else {
+          isComplete = taskValue <= task.target;
+        }
+        
+        if (isComplete) completed++;
+      });
+      
+      document.getElementById('tasksCompleted').textContent = completed;
+      document.getElementById('tasksTotal').textContent = tasks.length;
     }
 
     function buildWeekPicker() {

@@ -290,13 +290,20 @@
       }
 
       .controls {
-        width: 100%;
-        justify-content: space-between;
+        width: auto;
+        justify-content: center;
+        gap: 8px;
       }
 
       .count {
-        width: 100%;
+        width: auto;
         min-width: auto;
+      }
+
+      .btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.25rem;
       }
     }
 
@@ -336,14 +343,31 @@
     <aside class="footer">
       Your progress is saved in your browser automatically per selected week. Reloading restores your current counts for the week in focus.
     </aside>
+
+    <div class="week-select-wrap" style="margin-top: 20px;">
+      <label for="debugDatePicker">Debug date (leave empty for today)</label>
+      <input id="debugDatePicker" type="date" class="week-select" style="font-family: monospace;">
+    </div>
   </main>
 
   <script>
     const storageKey = 'weeklyTaskTrackerCounts';
     const taskDefKey = 'weeklyTaskDefinitions';
     const selectedWeekKey = 'weeklyTaskTrackerSelectedWeek';
+    const debugDateKey = 'weeklyTaskTrackerDebugDate';
     const weekPicker = document.getElementById('weekPicker');
     const taskContainer = document.getElementById('taskContainer');
+    const debugDatePicker = document.getElementById('debugDatePicker');
+
+    // Get today's date, respecting any debug date override
+    function getToday() {
+      const override = localStorage.getItem(debugDateKey);
+      if (override) {
+        const date = new Date(override + 'T00:00:00');
+        return date;
+      }
+      return new Date();
+    }
 
     const defaultTasks = [
       {
@@ -450,10 +474,12 @@
 
     function generateWeekOptions() {
       const weeks = [];
-      const start = new Date(2026, 2, 30);
-      for (let i = 0; i < 12; i++) {
-        const weekStart = new Date(start);
-        weekStart.setDate(start.getDate() + i * 7);
+      const start = startOfWeek(getToday());
+      const sixWeeksAgo = new Date(start);
+      sixWeeksAgo.setDate(start.getDate() - 42);
+      for (let i = 0; i < 13; i++) {
+        const weekStart = new Date(sixWeeksAgo);
+        weekStart.setDate(sixWeeksAgo.getDate() + i * 7);
         weeks.push(weekStart);
       }
       return weeks;
@@ -496,7 +522,7 @@
 
     function resetCurrentDay() {
       const weekKey = weekPicker.value;
-      const todayKey = getDateKey(new Date());
+      const todayKey = getDateKey(getToday());
       const storage = getPersistedData();
       if (storage[weekKey] && storage[weekKey][todayKey]) {
         storage[weekKey][todayKey] = {};
@@ -511,16 +537,31 @@
     }
 
     function createTaskCard(task, weekKey) {
-      const todayKey = getDateKey(new Date());
-      const counts = getWeekDayCounts(weekKey, todayKey);
-      const initialValue = typeof counts[task.id] === 'number' ? counts[task.id] : 0;
+      const todayKey = getDateKey(getToday());
+      const storage = getPersistedData();
+      
+      // For daily tasks, show today's count. For weekly tasks, sum the entire week.
+      let initialValue = 0;
+      if (task.daily) {
+        const counts = getWeekDayCounts(weekKey, todayKey);
+        initialValue = typeof counts[task.id] === 'number' ? counts[task.id] : 0;
+      } else {
+        // Sum all days in the week for this task
+        if (storage[weekKey]) {
+          for (const dayKey in storage[weekKey]) {
+            const dayCount = storage[weekKey][dayKey][task.id];
+            if (typeof dayCount === 'number') {
+              initialValue += dayCount;
+            }
+          }
+        }
+      }
       const card = document.createElement('article');
       card.className = 'card';
       card.innerHTML = `
         <div class="top-row">
           <div class="label-group">
             <h2 class="task-title">${task.title}</h2>
-            <p class="task-meta">${task.daily ? 'Daily target:' : 'Target:'} ${task.type === 'min' ? `at least ${task.target}` : `at most ${task.target}`} ${task.unitLabel}${task.daily ? ' (per day)' : ''}</p>
           </div>
           <div class="controls" aria-label="Adjust ${task.title}">
             <button class="btn decrease" aria-label="Decrease ${task.unitLabel}">−</button>
@@ -532,7 +573,6 @@
           <div class="progress-bar" style="width: 0%"></div>
         </div>
         <div class="status">
-          <span class="tag current"></span>
           <span class="tag detail"></span>
         </div>
       `;
@@ -540,19 +580,35 @@
       const decreaseButton = card.querySelector('.decrease');
       const increaseButton = card.querySelector('.increase');
       const progressBar = card.querySelector('.progress-bar');
-      const currentLabel = card.querySelector('.current');
       const detailLabel = card.querySelector('.detail');
       const countLabel = card.querySelector('.count');
 
       function getBonusAlcohol() {
         if (task.id !== 'alcohol') return 0;
         const allTasks = getStoredTasks();
-        const countsNow = getWeekDayCounts(weekKey, todayKey);
+        const storage = getPersistedData();
+        const countsNow = task.daily ? getWeekDayCounts(weekKey, todayKey) : {};
+        
         return allTasks.reduce((bonus, sourceTask) => {
           if (!sourceTask.bonusAlcohol || sourceTask.id === 'alcohol') {
             return bonus;
           }
-          const sourceCount = countsNow[sourceTask.id] || 0;
+          
+          let sourceCount = 0;
+          if (sourceTask.daily) {
+            sourceCount = countsNow[sourceTask.id] || 0;
+          } else {
+            // Sum across the week for non-daily tasks
+            if (storage[weekKey]) {
+              for (const dayKey in storage[weekKey]) {
+                const dayCount = storage[weekKey][dayKey][sourceTask.id];
+                if (typeof dayCount === 'number') {
+                  sourceCount += dayCount;
+                }
+              }
+            }
+          }
+          
           const extra = Math.max(0, sourceCount - sourceTask.target);
           const increments = Math.floor(extra / sourceTask.step);
           return bonus + increments * sourceTask.bonusAlcohol;
@@ -570,12 +626,10 @@
         countLabel.textContent = `${safeValue} ${task.unitLabel}`;
 
         if (task.type === 'min') {
-          currentLabel.textContent = safeValue >= task.target ? 'Goal reached' : 'Progress';
           detailLabel.textContent = safeValue >= task.target
-            ? 'Nice work — goal complete!'
+            ? ''
             : `${task.target - safeValue} ${task.unitLabel} to go`;
         } else {
-          currentLabel.textContent = safeValue <= effectiveTarget ? 'Under limit' : 'Over limit';
           detailLabel.textContent = safeValue <= effectiveTarget
             ? `${effectiveTarget - safeValue} ${task.unitLabel} remaining${task.id === 'alcohol' && effectiveTarget > task.target ? ` (${effectiveTarget - task.target} bonus units)` : ''}`
             : `${safeValue - effectiveTarget} over the limit`;
@@ -590,7 +644,7 @@
 
       function updateCount(value) {
         const safeValue = clamp(value, 0, task.type === 'min' ? Math.max(task.target, value) : Math.max(task.target, value));
-        const todayKey = getDateKey(new Date());
+        const todayKey = getDateKey(getToday());
         setWeekDayCount(weekKey, todayKey, task.id, safeValue);
         renderTasksForWeek(weekKey);
       }
@@ -626,7 +680,8 @@
       });
 
       const storedWeek = localStorage.getItem(selectedWeekKey);
-      const defaultWeekKey = storedWeek || getWeekKey(weekStarts[0]);
+      const todayStart = startOfWeek(getToday());
+      const defaultWeekKey = storedWeek || getWeekKey(todayStart);
       weekPicker.value = defaultWeekKey;
       renderTasksForWeek(weekPicker.value);
     }
@@ -709,6 +764,27 @@
         if (!confirmed) return;
         localStorage.clear();
         showStatusMessage('All local data cleared. Reloading page...');
+        setTimeout(() => window.location.reload(), 500);
+      });
+    }
+
+    // Debug date picker functionality
+    if (debugDatePicker) {
+      // Load stored debug date if exists
+      const storedDebugDate = localStorage.getItem(debugDateKey);
+      if (storedDebugDate) {
+        debugDatePicker.value = storedDebugDate;
+      }
+
+      debugDatePicker.addEventListener('change', () => {
+        if (debugDatePicker.value) {
+          localStorage.setItem(debugDateKey, debugDatePicker.value);
+          showStatusMessage(`Debug date set to ${debugDatePicker.value}. Reloading...`);
+        } else {
+          localStorage.removeItem(debugDateKey);
+          debugDatePicker.value = '';
+          showStatusMessage('Debug date cleared. Using today\'s date. Reloading...');
+        }
         setTimeout(() => window.location.reload(), 500);
       });
     }

@@ -375,7 +375,7 @@
     const defaultTasks = [
       {
         id: 'steps',
-        title: 'Walk at least 100,000 steps',
+        title: 'Walk 100k steps',
         unitLabel: 'steps',
         target: 100000,
         type: 'min',
@@ -384,7 +384,7 @@
       },
       {
         id: 'exercise',
-        title: 'Exercise at least 240 mins',
+        title: 'Exercise 240 mins',
         unitLabel: 'mins',
         target: 240,
         type: 'min',
@@ -393,7 +393,7 @@
       },
       {
         id: 'water',
-        title: 'Drink at least 4 pints of water per day',
+        title: 'Drink 4 pints water per day',
         unitLabel: 'pints',
         target: 4,
         type: 'min',
@@ -402,7 +402,7 @@
       },
       {
         id: 'fruit',
-        title: 'Eat at least 25 pieces of fruit',
+        title: 'Eat 25 pieces of fruit',
         unitLabel: 'fruit',
         target: 25,
         type: 'min',
@@ -410,9 +410,33 @@
       },
       {
         id: 'alcohol',
-        title: 'Drink no more than 25 alcohol units',
+        title: 'Drink no more than 20 alcohol units',
         unitLabel: 'units',
-        target: 25,
+        target: 20,
+        type: 'max',
+        step: 1
+      },
+      {
+        id: 'alcoholFreeDays',
+        title: 'Have 5 alcohol free days',
+        unitLabel: 'days',
+        target: 5,
+        type: 'min',
+        step: 1
+      },
+      {
+        id: 'beans',
+        title: 'Eat 6 Bn',
+        unitLabel: 'beans',
+        target: 6,
+        type: 'min',
+        step: 1
+      },
+      {
+        id: 'bread',
+        title: 'Eat no more than 4 bread',
+        unitLabel: 'slices',
+        target: 4,
         type: 'max',
         step: 1
       }

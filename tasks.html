@@ -539,18 +539,18 @@
         step: 1
       },
       {
-        id: 'beans',
-        title: 'Eat 6 Bn',
-        unitLabel: 'beans',
+        id: 'bns',
+        title: 'Eat 6 Bns',
+        unitLabel: 'bns',
         target: 6,
         type: 'min',
         step: 1
       },
       {
         id: 'bread',
-        title: 'Eat no more than 4 bread',
-        unitLabel: 'slices',
-        target: 4,
+        title: 'Eat no more than 8 breads',
+        unitLabel: 'bread',
+        target: 8,
         type: 'max',
         step: 1
       }
@@ -944,21 +944,21 @@
     function updateCompletionStatus(weekKey, tasks) {
       const storage = getPersistedData();
       let completed = 0;
+      let totalNonDaily = 0;
       
       tasks.forEach(task => {
+        // Skip daily tasks in completion count
+        if (task.daily) return;
+        
+        totalNonDaily++;
+        
         let taskValue = 0;
-        if (task.daily) {
-          const todayKey = getDateKey(getToday());
-          const counts = getWeekDayCounts(weekKey, todayKey);
-          taskValue = typeof counts[task.id] === 'number' ? counts[task.id] : 0;
-        } else {
-          // Sum all days in the week for this task
-          if (storage[weekKey]) {
-            for (const dayKey in storage[weekKey]) {
-              const dayCount = storage[weekKey][dayKey][task.id];
-              if (typeof dayCount === 'number') {
-                taskValue += dayCount;
-              }
+        // Sum all days in the week for this task
+        if (storage[weekKey]) {
+          for (const dayKey in storage[weekKey]) {
+            const dayCount = storage[weekKey][dayKey][task.id];
+            if (typeof dayCount === 'number') {
+              taskValue += dayCount;
             }
           }
         }
@@ -1004,7 +1004,7 @@
       });
       
       document.getElementById('tasksCompleted').textContent = completed;
-      document.getElementById('tasksTotal').textContent = tasks.length;
+      document.getElementById('tasksTotal').textContent = totalNonDaily;
     }
 
     function buildWeekPicker() {

@@ -318,6 +318,64 @@
       margin: 0;
     }
 
+    .task-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+      padding: 14px 0;
+    }
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      font-size: 0.9rem;
+    }
+
+    .summary-item.incomplete {
+      border-color: rgba(255, 193, 7, 0.4);
+      background: rgba(255, 193, 7, 0.08);
+    }
+
+    .summary-item.complete {
+      border-color: rgba(76, 175, 80, 0.4);
+      background: rgba(76, 175, 80, 0.08);
+    }
+
+    .summary-item.exceeded {
+      border-color: rgba(244, 67, 54, 0.4);
+      background: rgba(244, 67, 54, 0.08);
+    }
+
+    .summary-item.incomplete .summary-value {
+      color: rgba(255, 193, 7, 0.9);
+    }
+
+    .summary-item.complete .summary-value {
+      color: rgba(76, 175, 80, 0.9);
+    }
+
+    .summary-item.exceeded .summary-value {
+      color: rgba(244, 67, 54, 0.9);
+    }
+
+    .summary-label {
+      color: rgba(238, 242, 255, 0.7);
+      font-size: 0.8rem;
+      line-height: 1.2;
+    }
+
+    .summary-value {
+      color: rgba(124, 226, 255, 0.9);
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
     .footer {
       margin-top: 16px;
       padding: 16px 20px;
@@ -387,6 +445,7 @@
     </section>
 
     <p id="statusMessage" class="hint"></p>
+    <div id="taskSummary" class="task-summary"></div>
     <div id="taskContainer"></div>
 
     <div class="bottom-actions">
@@ -774,7 +833,9 @@
         const safeValue = clamp(value, 0, task.type === 'min' ? Math.max(task.target, value) : Math.max(task.target, value));
         setWeekDayCount(weekKey, dayKey, task.id, safeValue);
         renderCard();
-        updateCompletionStatus(weekKey, getStoredTasks());
+        const tasks = getStoredTasks();
+        updateCompletionStatus(weekKey, tasks);
+        updateTaskSummary(weekKey, tasks);
       }
 
       // Add event listeners for all day buttons
@@ -802,8 +863,82 @@
       const tasks = getStoredTasks();
       tasks.forEach(task => taskContainer.appendChild(createTaskCard(task, weekKey)));
       
-      // Update completion status
+      // Update completion status and summary
       updateCompletionStatus(weekKey, tasks);
+      updateTaskSummary(weekKey, tasks);
+    }
+
+    function updateTaskSummary(weekKey, tasks) {
+      const storage = getPersistedData();
+      const summaryContainer = document.getElementById('taskSummary');
+      
+      summaryContainer.innerHTML = tasks.map(task => {
+        let taskValue = 0;
+        if (task.daily) {
+          const todayKey = getDateKey(getToday());
+          const counts = getWeekDayCounts(weekKey, todayKey);
+          taskValue = typeof counts[task.id] === 'number' ? counts[task.id] : 0;
+        } else {
+          // Sum all days in the week for this task
+          if (storage[weekKey]) {
+            for (const dayKey in storage[weekKey]) {
+              const dayCount = storage[weekKey][dayKey][task.id];
+              if (typeof dayCount === 'number') {
+                taskValue += dayCount;
+              }
+            }
+          }
+        }
+        
+        let targetText = '';
+        let status = 'incomplete';
+        
+        if (task.id === 'alcohol') {
+          let bonusAlcohol = 0;
+          tasks.forEach(sourceTask => {
+            if (!sourceTask.bonusAlcohol || sourceTask.id === 'alcohol') return;
+            let sourceCount = 0;
+            if (sourceTask.daily) {
+              const todayKey = getDateKey(getToday());
+              const counts = getWeekDayCounts(weekKey, todayKey);
+              sourceCount = counts[sourceTask.id] || 0;
+            } else {
+              if (storage[weekKey]) {
+                for (const dayKey in storage[weekKey]) {
+                  const dayCount = storage[weekKey][dayKey][sourceTask.id];
+                  if (typeof dayCount === 'number') {
+                    sourceCount += dayCount;
+                  }
+                }
+              }
+            }
+            const extra = Math.max(0, sourceCount - sourceTask.target);
+            const increments = Math.floor(extra / sourceTask.step);
+            bonusAlcohol += increments * sourceTask.bonusAlcohol;
+          });
+          const effectiveTarget = task.target + bonusAlcohol;
+          targetText = `${effectiveTarget}`;
+          if (taskValue <= effectiveTarget) {
+            status = 'complete';
+          } else {
+            status = 'exceeded';
+          }
+        } else {
+          targetText = `${task.target}`;
+          if (task.type === 'min') {
+            status = taskValue >= task.target ? 'complete' : 'incomplete';
+          } else {
+            status = taskValue <= task.target ? 'complete' : 'exceeded';
+          }
+        }
+        
+        return `
+          <div class="summary-item ${status}">
+            <div class="summary-label">${task.title}</div>
+            <div class="summary-value">${taskValue} / ${targetText}</div>
+          </div>
+        `;
+      }).join('');
     }
 
     function updateCompletionStatus(weekKey, tasks) {

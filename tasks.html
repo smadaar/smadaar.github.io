@@ -248,20 +248,68 @@
       transition: width 0.25s ease, background 0.25s ease;
     }
 
-    .status {
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      color: rgba(238, 242, 255, 0.76);
-      font-size: 0.96rem;
-      margin: 0;
-      flex-wrap: wrap;
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-top: 12px;
     }
 
-    .status .tag {
-      border-radius: 999px;
-      padding: 6px 12px;
-      background: rgba(255, 255, 255, 0.06);
+    .day-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .day-label {
+      font-size: 0.85rem;
+      color: rgba(238, 242, 255, 0.7);
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 4px;
+      line-height: 1.2;
+    }
+
+    .day-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .day-count {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      text-align: center;
+      min-height: 1.2em;
+    }
+
+    .day-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      color: #f8fbff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: transform 0.18s ease, background-color 0.18s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .day-btn:hover,
+    .day-btn:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(124, 226, 255, 0.2);
+      outline: none;
     }
 
     .hint {
@@ -289,21 +337,33 @@
         align-items: stretch;
       }
 
-      .controls {
-        width: auto;
-        justify-content: center;
-        gap: 8px;
+      .days-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
       }
 
-      .count {
-        width: auto;
-        min-width: auto;
+      .day-column {
+        padding: 6px;
       }
 
-      .btn {
-        width: 40px;
-        height: 40px;
-        font-size: 1.25rem;
+      .day-label {
+        font-size: 0.75rem;
+      }
+
+      .day-count {
+        font-size: 0.8rem;
+      }
+
+      .day-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .days-grid {
+        grid-template-columns: repeat(3, 1fr);
       }
     }
 
@@ -585,36 +645,55 @@
       }
       const card = document.createElement('article');
       card.className = 'card';
+      
+      // Get week start date
+      const weekStart = new Date(weekKey + 'T00:00:00');
+      const days = [];
+      for (let i = 0; i < 7; i++) {
+        const dayDate = new Date(weekStart);
+        dayDate.setDate(weekStart.getDate() + i);
+        days.push({
+          date: dayDate,
+          key: getDateKey(dayDate),
+          label: dayDate.toLocaleDateString('en-US', { weekday: 'short' }) + '<br>' + dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        });
+      }
+      
       card.innerHTML = `
         <div class="top-row">
           <div class="label-group">
             <h2 class="task-title">${task.title}</h2>
           </div>
-          <div class="controls" aria-label="Adjust ${task.title}">
-            <button class="btn decrease" aria-label="Decrease ${task.unitLabel}">−</button>
-            <div class="count" aria-live="polite">${initialValue} ${task.unitLabel}</div>
-            <button class="btn increase" aria-label="Increase ${task.unitLabel}">+</button>
-          </div>
         </div>
+        <div class="days-grid">
+          ${days.map(day => `
+            <div class="day-column" data-day="${day.key}">
+              <div class="day-label">${day.label}</div>
+              <div class="day-controls">
+                <button class="day-btn increase" data-day="${day.key}" aria-label="Increase ${task.unitLabel} for ${day.label}">+</button>
+                <div class="day-count" data-day="${day.key}" aria-live="polite">0 ${task.unitLabel}</div>
+                <button class="day-btn decrease" data-day="${day.key}" aria-label="Decrease ${task.unitLabel} for ${day.label}">−</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        ${!task.daily ? `
         <div class="progress" aria-hidden="true">
           <div class="progress-bar" style="width: 0%"></div>
         </div>
+        ` : ''}
         <div class="status">
           <span class="tag detail"></span>
         </div>
       `;
 
-      const decreaseButton = card.querySelector('.decrease');
-      const increaseButton = card.querySelector('.increase');
-      const progressBar = card.querySelector('.progress-bar');
+      const progressBar = task.daily ? null : card.querySelector('.progress-bar');
       const detailLabel = card.querySelector('.detail');
-      const countLabel = card.querySelector('.count');
 
       function getBonusAlcohol() {
         if (task.id !== 'alcohol') return 0;
         const allTasks = getStoredTasks();
         const storage = getPersistedData();
-        const countsNow = task.daily ? getWeekDayCounts(weekKey, todayKey) : {};
         
         return allTasks.reduce((bonus, sourceTask) => {
           if (!sourceTask.bonusAlcohol || sourceTask.id === 'alcohol') {
@@ -623,7 +702,9 @@
           
           let sourceCount = 0;
           if (sourceTask.daily) {
-            sourceCount = countsNow[sourceTask.id] || 0;
+            const todayKey = getDateKey(getToday());
+            const counts = getWeekDayCounts(weekKey, todayKey);
+            sourceCount = counts[sourceTask.id] || 0;
           } else {
             // Sum across the week for non-daily tasks
             if (storage[weekKey]) {
@@ -642,51 +723,82 @@
         }, 0);
       }
 
-      function renderCard(value) {
-        const safeValue = clamp(value, 0, task.type === 'min' ? Math.max(task.target, value) : Math.max(task.target, value));
+      function getWeeklyTotal() {
+        const storage = getPersistedData();
+        let total = 0;
+        if (storage[weekKey]) {
+          for (const dayKey in storage[weekKey]) {
+            const dayCount = storage[weekKey][dayKey][task.id];
+            if (typeof dayCount === 'number') {
+              total += dayCount;
+            }
+          }
+        }
+        return total;
+      }
+
+      function renderCard() {
+        const weeklyTotal = getWeeklyTotal();
         const effectiveTarget = task.id === 'alcohol' ? task.target + getBonusAlcohol() : task.target;
         const progress = task.type === 'min'
-          ? clamp((safeValue / task.target) * 100, 0, 100)
-          : clamp((1 - safeValue / effectiveTarget) * 100, 0, 100);
+          ? clamp((weeklyTotal / task.target) * 100, 0, 100)
+          : clamp((1 - weeklyTotal / effectiveTarget) * 100, 0, 100);
 
-        progressBar.style.width = `${progress}%`;
-        countLabel.textContent = `${safeValue} ${task.unitLabel}`;
-
-        if (task.type === 'min') {
-          detailLabel.textContent = safeValue >= task.target
-            ? ''
-            : `${task.target - safeValue} ${task.unitLabel} to go`;
-        } else {
-          detailLabel.textContent = safeValue <= effectiveTarget
-            ? `${effectiveTarget - safeValue} ${task.unitLabel} remaining${task.id === 'alcohol' && effectiveTarget > task.target ? ` (${effectiveTarget - task.target} bonus units)` : ''}`
-            : `${safeValue - effectiveTarget} over the limit`;
+        if (!task.daily) {
+          progressBar.style.width = `${progress}%`;
         }
 
-        if (task.type === 'max' && safeValue > effectiveTarget) {
-          progressBar.style.background = 'linear-gradient(90deg, rgba(255,136,136,0.95), rgba(255,96,96,0.95))';
+        // Update each day's count
+        days.forEach(day => {
+          const counts = getWeekDayCounts(weekKey, day.key);
+          const dayValue = typeof counts[task.id] === 'number' ? counts[task.id] : 0;
+          const countElement = card.querySelector(`.day-count[data-day="${day.key}"]`);
+          if (countElement) {
+            countElement.textContent = `${dayValue} ${task.unitLabel}`;
+          }
+        });
+
+        if (task.type === 'min') {
+          detailLabel.textContent = weeklyTotal >= task.target
+            ? ''
+            : `${task.target - weeklyTotal} ${task.unitLabel} to go`;
         } else {
+          detailLabel.textContent = weeklyTotal <= effectiveTarget
+            ? `${effectiveTarget - weeklyTotal} ${task.unitLabel} remaining${task.id === 'alcohol' && effectiveTarget > task.target ? ` (${effectiveTarget - task.target} bonus units)` : ''}`
+            : `${weeklyTotal - effectiveTarget} over the limit`;
+        }
+
+        if (!task.daily && task.type === 'max' && weeklyTotal > effectiveTarget) {
+          progressBar.style.background = 'linear-gradient(90deg, rgba(255,136,136,0.95), rgba(255,96,96,0.95))';
+        } else if (!task.daily) {
           progressBar.style.background = 'linear-gradient(90deg, rgba(124,226,255,0.95), rgba(141,123,255,0.9))';
         }
       }
 
-      function updateCount(value) {
+      function updateDayCount(dayKey, value) {
         const safeValue = clamp(value, 0, task.type === 'min' ? Math.max(task.target, value) : Math.max(task.target, value));
-        const todayKey = getDateKey(getToday());
-        setWeekDayCount(weekKey, todayKey, task.id, safeValue);
-        renderTasksForWeek(weekKey);
+        setWeekDayCount(weekKey, dayKey, task.id, safeValue);
+        renderCard();
+        updateCompletionStatus(weekKey, getStoredTasks());
       }
 
-      decreaseButton.addEventListener('click', () => {
-        const current = typeof getWeekDayCounts(weekKey, todayKey)[task.id] === 'number' ? getWeekDayCounts(weekKey, todayKey)[task.id] : 0;
-        updateCount(current - task.step);
+      // Add event listeners for all day buttons
+      days.forEach(day => {
+        const increaseBtn = card.querySelector(`.day-btn.increase[data-day="${day.key}"]`);
+        const decreaseBtn = card.querySelector(`.day-btn.decrease[data-day="${day.key}"]`);
+
+        increaseBtn.addEventListener('click', () => {
+          const current = typeof getWeekDayCounts(weekKey, day.key)[task.id] === 'number' ? getWeekDayCounts(weekKey, day.key)[task.id] : 0;
+          updateDayCount(day.key, current + task.step);
+        });
+
+        decreaseBtn.addEventListener('click', () => {
+          const current = typeof getWeekDayCounts(weekKey, day.key)[task.id] === 'number' ? getWeekDayCounts(weekKey, day.key)[task.id] : 0;
+          updateDayCount(day.key, current - task.step);
+        });
       });
 
-      increaseButton.addEventListener('click', () => {
-        const current = typeof getWeekDayCounts(weekKey, todayKey)[task.id] === 'number' ? getWeekDayCounts(weekKey, todayKey)[task.id] : 0;
-        updateCount(current + task.step);
-      });
-
-      renderCard(initialValue);
+      renderCard();
       return card;
     }
 

@@ -255,15 +255,15 @@
       margin-top: 12px;
     }
 
-    .day-column {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 8px;
-      background: rgba(255, 255, 255, 0.04);
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+    .day-column.current-day {
+      background: rgba(124, 226, 255, 0.15);
+      border: 1px solid rgba(124, 226, 255, 0.3);
+      box-shadow: 0 0 12px rgba(124, 226, 255, 0.2);
+    }
+
+    .day-column.current-day .day-label {
+      color: rgba(124, 226, 255, 0.9);
+      font-weight: 700;
     }
 
     .day-label {
@@ -347,17 +347,18 @@
       }
 
       .day-label {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
+        margin-bottom: 2px;
       }
 
       .day-count {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
       }
 
       .day-btn {
-        width: 24px;
-        height: 24px;
-        font-size: 1rem;
+        width: 22px;
+        height: 22px;
+        font-size: 0.9rem;
       }
     }
 
@@ -655,7 +656,7 @@
         days.push({
           date: dayDate,
           key: getDateKey(dayDate),
-          label: dayDate.toLocaleDateString('en-US', { weekday: 'short' }) + '<br>' + dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          label: dayDate.toLocaleDateString('en-US', { weekday: 'short' }).substring(0, 2)
         });
       }
       
@@ -667,11 +668,11 @@
         </div>
         <div class="days-grid">
           ${days.map(day => `
-            <div class="day-column" data-day="${day.key}">
+            <div class="day-column${day.key === getDateKey(getToday()) ? ' current-day' : ''}" data-day="${day.key}">
               <div class="day-label">${day.label}</div>
               <div class="day-controls">
                 <button class="day-btn increase" data-day="${day.key}" aria-label="Increase ${task.unitLabel} for ${day.label}">+</button>
-                <div class="day-count" data-day="${day.key}" aria-live="polite">0 ${task.unitLabel}</div>
+                <div class="day-count" data-day="${day.key}" aria-live="polite">0</div>
                 <button class="day-btn decrease" data-day="${day.key}" aria-label="Decrease ${task.unitLabel} for ${day.label}">−</button>
               </div>
             </div>
@@ -754,7 +755,7 @@
           const dayValue = typeof counts[task.id] === 'number' ? counts[task.id] : 0;
           const countElement = card.querySelector(`.day-count[data-day="${day.key}"]`);
           if (countElement) {
-            countElement.textContent = `${dayValue} ${task.unitLabel}`;
+            countElement.textContent = `${dayValue}`;
           }
         });
 

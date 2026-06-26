@@ -1,5 +1,5 @@
 function getText(item) {
-  return [item.title, item.type, item.notes, item.start, item.end, item.duration]
+  return [item.title, item.type, item.notes, item.start, item.end]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
@@ -20,20 +20,92 @@ function createElement(tag, options = {}) {
 
 function renderPlanner(data) {
   const planner = document.getElementById('planner');
-  const typeFilter = document.getElementById('type-filter');
+  const typeFilterContainer = document.getElementById('type-filter');
+  const travelTotal = document.getElementById('travel-total');
 
-  if (!planner || !typeFilter) {
+  if (!planner || !typeFilterContainer || !travelTotal) {
     return;
   }
 
+  const typeFilterInputs = Array.from(typeFilterContainer.querySelectorAll('input[type="checkbox"]'));
+  const typeFilterLabels = Array.from(typeFilterContainer.querySelectorAll('.filter-checkbox-label'));
+  if (typeFilterInputs.length === 0) {
+    return;
+  }
+
+  const getMinutes = (duration) => {
+    if (!duration) return 0;
+    const match = duration.match(/(\d+)h\s*(\d+)?m?/);
+    if (!match) return 0;
+    const hours = Number(match[1] || 0);
+    const minutes = Number(match[2] || 0);
+    return hours * 60 + minutes;
+  };
+
+  const formatMinutes = (minutesTotal) => {
+    const hours = Math.floor(minutesTotal / 60);
+    const minutes = minutesTotal % 60;
+    if (hours && minutes) return `${hours}h ${minutes}m`;
+    if (hours) return `${hours}h`;    
+    return `${minutes}m`;
+  };
+
+  const getDirectionsUrl = (item) => {
+    if (item.directionUrl) {
+      return item.directionUrl;
+    }
+
+    if (item.from && item.to) {
+      const origin = encodeURIComponent(item.from.trim());
+      const destination = encodeURIComponent(item.to.trim());
+      const mode = item.travelMode ? `&travelmode=${encodeURIComponent(item.travelMode)}` : '';
+      return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${mode}`;
+    }
+
+    return null;
+  };
+
+  const getMapUrl = (item) => {
+    if (item.mapUrl) {
+      return item.mapUrl;
+    }
+
+    if (item.type === 'Travel') {
+      return getDirectionsUrl(item);
+    }
+
+    return null;
+  };
+
+  const calculateDuration = (item) => {
+    if (!item.start || !item.end) return 0;
+    const [startHour, startMin] = item.start.split(':').map(Number);
+    const [endHour, endMin] = item.end.split(':').map(Number);
+    const startTotalMin = startHour * 60 + startMin;
+    const endTotalMin = endHour * 60 + endMin;
+    return Math.max(0, endTotalMin - startTotalMin);
+  };
+
+  const totalTravelMinutes = data.days.reduce((sum, day) => {
+    return day.items.reduce((daySum, item) => {
+      if (item.type === 'Travel') {
+        return daySum + calculateDuration(item);
+      }
+      return daySum;
+    }, 0) + sum;
+  }, 0);
+
+  travelTotal.textContent = `Total travel time: ${formatMinutes(totalTravelMinutes)}`;
+
   const render = () => {
-    const filterValue = typeFilter.value;
+    const selectedValues = typeFilterInputs.filter((input) => input.checked).map((input) => input.value);
+    const showAll = selectedValues.includes('All') || selectedValues.length === 0;
 
     planner.innerHTML = '';
 
     data.days.forEach((day) => {
       const visibleItems = day.items.filter((item) => {
-        return !filterValue || item.type === filterValue;
+        return showAll || selectedValues.includes(item.type);
       });
 
       if (visibleItems.length === 0) {
@@ -61,13 +133,38 @@ function renderPlanner(data) {
 
         const timeInfo = createElement('div', { className: 'item-meta' });
         const timeParts = [];
-        if (item.start) timeParts.push(`Start: ${item.start}`);
-        if (item.end) timeParts.push(`End: ${item.end}`);
-        if (item.duration) timeParts.push(`Duration: ${item.duration}`);
-        timeInfo.textContent = timeParts.join(' · ') || 'Time TBD';
+        if (item.start && item.end) {
+          timeParts.push(`${item.start}-${item.end}`);
+          const durationMinutes = calculateDuration(item);
+          if (durationMinutes > 0) {
+            timeParts.push(`(${formatMinutes(durationMinutes)})`);
+          }
+        } else if (item.start) {
+          timeParts.push(item.start);
+        } else if (item.end) {
+          timeParts.push(item.end);
+        }
+
+        timeInfo.textContent = timeParts.join(' ') || 'Time TBD';
 
         if (item.type === 'Hotel') {
-          timeInfo.textContent = item.start ? `Check-in: ${item.start}` : 'Hotel night';
+          timeInfo.textContent = item.start ? `${item.start}` : 'Hotel night';
+        }
+
+        const mapUrl = getMapUrl(item);
+
+        if (mapUrl) {
+          const label = item.type === 'Travel' ? 'Directions' : 'Map';
+          const mapLink = createElement('a', {
+            text: label,
+            className: 'map-link',
+            attrs: {
+              href: mapUrl,
+              target: '_blank',
+              rel: 'noopener noreferrer'
+            }
+          });
+          timeInfo.append(' ', mapLink);
         }
 
         row.append(badge, titleBlock, timeInfo);
@@ -83,7 +180,58 @@ function renderPlanner(data) {
     }
   };
 
-  typeFilter.addEventListener('change', render);
+  const syncAllCheckbox = () => {
+    const allCheckbox = typeFilterInputs.find((input) => input.value === 'All');
+    const checkedTypes = typeFilterInputs.filter((input) => input.checked && input.value !== 'All');
+
+    if (allCheckbox && checkedTypes.length > 0) {
+      allCheckbox.checked = false;
+    }
+
+    if (allCheckbox && checkedTypes.length === typeFilterInputs.length - 1) {
+      allCheckbox.checked = true;
+    }
+  };
+
+  typeFilterInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+      const allCheckbox = typeFilterInputs.find((item) => item.value === 'All');
+      const otherCheckboxes = typeFilterInputs.filter((item) => item.value !== 'All');
+
+      if (input.value === 'All') {
+        otherCheckboxes.forEach((other) => {
+          other.checked = input.checked;
+        });
+      } else {
+        const checkedOtherCount = otherCheckboxes.filter((item) => item.checked).length;
+        if (allCheckbox) {
+          allCheckbox.checked = checkedOtherCount === otherCheckboxes.length;
+        }
+      }
+
+      if (allCheckbox && allCheckbox.checked && !input.checked && input.value === 'All') {
+        typeFilterInputs.forEach((other) => {
+          other.checked = other.value === 'All';
+        });
+      }
+
+      render();
+    });
+  });
+
+  typeFilterLabels.forEach((label) => {
+    const checkbox = label.previousElementSibling;
+    if (!checkbox || checkbox.tagName !== 'INPUT') {
+      return;
+    }
+
+    label.addEventListener('click', (event) => {
+      event.preventDefault();
+      checkbox.checked = !checkbox.checked;
+      checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+
   render();
 }
 

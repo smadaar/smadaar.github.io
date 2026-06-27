@@ -5,6 +5,8 @@ function getText(item) {
     .toLowerCase();
 }
 
+let currentRoadtripData = null;
+
 function createElement(tag, options = {}) {
   const element = document.createElement(tag);
   if (options.text) element.textContent = options.text;
@@ -16,6 +18,95 @@ function createElement(tag, options = {}) {
     });
   }
   return element;
+}
+
+function parseEditorJson(raw) {
+  try {
+    return { value: JSON.parse(raw) };
+  } catch (error) {
+    return { error };
+  }
+}
+
+function createRoadtripJsSnippet(data) {
+  return `const roadtripData = ${JSON.stringify(data, null, 2)};\n\nwindow.roadtripData = roadtripData;`;
+}
+
+function setupPlannerEditor(initialData) {
+  const editorToggle = document.getElementById('toggle-editor');
+  const editorContainer = document.getElementById('editor-container');
+  const editorTextarea = document.getElementById('planner-json-editor');
+  const previewButton = document.getElementById('preview-changes');
+  const saveButton = document.getElementById('save-whatsapp');
+  const copyButton = document.getElementById('copy-js');
+  const status = document.getElementById('editor-status');
+
+  if (!editorToggle || !editorContainer || !editorTextarea || !previewButton || !saveButton || !copyButton || !status) {
+    return;
+  }
+
+  function setStatus(message, isError = false) {
+    status.textContent = message;
+    status.style.color = isError ? '#b91c1c' : '#0f172a';
+  }
+
+  function updateEditorTextarea(data) {
+    editorTextarea.value = JSON.stringify(data, null, 2);
+  }
+
+  function openWhatsAppWithText(text) {
+    const encoded = encodeURIComponent(text);
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encoded}`;
+    window.open(whatsappUrl, '_blank');
+  }
+
+  editorToggle.addEventListener('click', () => {
+    const hidden = editorContainer.classList.toggle('hidden');
+    editorToggle.textContent = hidden ? 'Edit planner' : 'Hide planner editor';
+  });
+
+  previewButton.addEventListener('click', () => {
+    const parsed = parseEditorJson(editorTextarea.value);
+    if (parsed.error) {
+      setStatus(`Invalid JSON: ${parsed.error.message}`, true);
+      return;
+    }
+    currentRoadtripData = parsed.value;
+    renderPlanner(parsed.value);
+    setStatus('Preview updated from editor.');
+  });
+
+  saveButton.addEventListener('click', () => {
+    const parsed = parseEditorJson(editorTextarea.value);
+    if (parsed.error) {
+      setStatus(`Invalid JSON: ${parsed.error.message}`, true);
+      return;
+    }
+    const snippet = createRoadtripJsSnippet(parsed.value);
+    openWhatsAppWithText(snippet);
+    setStatus('Opening WhatsApp with updated planner JS...');
+  });
+
+  copyButton.addEventListener('click', async () => {
+    const parsed = parseEditorJson(editorTextarea.value);
+    if (parsed.error) {
+      setStatus(`Invalid JSON: ${parsed.error.message}`, true);
+      return;
+    }
+    const snippet = createRoadtripJsSnippet(parsed.value);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(snippet);
+        setStatus('Planner JS copied to clipboard.');
+      } catch (error) {
+        setStatus('Copy failed. Please copy manually.', true);
+      }
+    } else {
+      setStatus('Clipboard not available. Copy manually.', true);
+    }
+  });
+
+  updateEditorTextarea(initialData);
 }
 
 function renderPlanner(data) {
@@ -193,44 +284,48 @@ function renderPlanner(data) {
     }
   };
 
-  typeFilterInputs.forEach((input) => {
-    input.addEventListener('change', () => {
-      const allCheckbox = typeFilterInputs.find((item) => item.value === 'All');
-      const otherCheckboxes = typeFilterInputs.filter((item) => item.value !== 'All');
+  if (typeFilterContainer.dataset.listenersAttached !== 'true') {
+    typeFilterInputs.forEach((input) => {
+      input.addEventListener('change', () => {
+        const allCheckbox = typeFilterInputs.find((item) => item.value === 'All');
+        const otherCheckboxes = typeFilterInputs.filter((item) => item.value !== 'All');
 
-      if (input.value === 'All') {
-        otherCheckboxes.forEach((other) => {
-          other.checked = input.checked;
-        });
-      } else {
-        const checkedOtherCount = otherCheckboxes.filter((item) => item.checked).length;
-        if (allCheckbox) {
-          allCheckbox.checked = checkedOtherCount === otherCheckboxes.length;
+        if (input.value === 'All') {
+          otherCheckboxes.forEach((other) => {
+            other.checked = input.checked;
+          });
+        } else {
+          const checkedOtherCount = otherCheckboxes.filter((item) => item.checked).length;
+          if (allCheckbox) {
+            allCheckbox.checked = checkedOtherCount === otherCheckboxes.length;
+          }
         }
+
+        if (allCheckbox && allCheckbox.checked && !input.checked && input.value === 'All') {
+          typeFilterInputs.forEach((other) => {
+            other.checked = other.value === 'All';
+          });
+        }
+
+        render();
+      });
+    });
+
+    typeFilterLabels.forEach((label) => {
+      const checkbox = label.previousElementSibling;
+      if (!checkbox || checkbox.tagName !== 'INPUT') {
+        return;
       }
 
-      if (allCheckbox && allCheckbox.checked && !input.checked && input.value === 'All') {
-        typeFilterInputs.forEach((other) => {
-          other.checked = other.value === 'All';
-        });
-      }
-
-      render();
+      label.addEventListener('click', (event) => {
+        event.preventDefault();
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+      });
     });
-  });
 
-  typeFilterLabels.forEach((label) => {
-    const checkbox = label.previousElementSibling;
-    if (!checkbox || checkbox.tagName !== 'INPUT') {
-      return;
-    }
-
-    label.addEventListener('click', (event) => {
-      event.preventDefault();
-      checkbox.checked = !checkbox.checked;
-      checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-  });
+    typeFilterContainer.dataset.listenersAttached = 'true';
+  }
 
   render();
 }
@@ -238,6 +333,8 @@ function renderPlanner(data) {
 const roadtripPayload = typeof roadtripData !== 'undefined' ? roadtripData : window.roadtripData;
 
 if (roadtripPayload) {
+  currentRoadtripData = roadtripPayload;
+  setupPlannerEditor(roadtripPayload);
   renderPlanner(roadtripPayload);
 } else {
   console.error('Road trip data file failed to load.');

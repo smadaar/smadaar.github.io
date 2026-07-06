@@ -439,21 +439,23 @@ function renderPlanner(data) {
         )
     );
 
-    const totalTravel = data.days.reduce((sum, day) => {
+    const totalDrive = data.days.reduce((sum, day) => {
 
         return sum + day.items.reduce((dayTotal, item) => {
 
-            if (item.type !== "Travel")
+            if (item.type !== "Drive")
                 return dayTotal;
 
-            return dayTotal + calculateDuration(item);
+            const duration = calculateDuration(item);
+            return dayTotal + (Number.isFinite(duration) ? duration : 0);
 
         }, 0);
 
     }, 0);
 
+    const driveTimeText = formatMinutes(totalDrive) || "0m";
     travelTotal.textContent =
-        `Total travel time: ${formatMinutes(totalTravel)}`;
+        `Total drive time: ${driveTimeText}`; 
 
     function render() {
 
@@ -550,13 +552,13 @@ function renderPlanner(data) {
                     })
                 );
 
-                body.appendChild(
-                    createElement("p", {
-                        text:
-                            item.notes ||
-                            "No additional notes."
-                    })
-                );
+                if (item.notes) {
+                    body.appendChild(
+                        createElement("p", {
+                            text: item.notes
+                        })
+                    );
+                }
 
                 const meta = createElement("div", {
                     className: "item-meta"

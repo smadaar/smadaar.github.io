@@ -1,4 +1,4 @@
-import { API_URL } from "./config.js";
+import { API_URL } from "./config.js?v=20260706";
 
 export async function loadRoadtrip() {
     const response = await fetch(API_URL, {

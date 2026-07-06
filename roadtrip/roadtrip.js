@@ -1,341 +1,778 @@
-function getText(item) {
-  return [item.title, item.type, item.notes, item.start, item.end]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-}
+// ============================================================================
+// Roadtrip Planner
+// Read-only version backed by Google Sheets
+// ============================================================================
+
+const API_URL =
+    "https://script.google.com/macros/s/AKfycby8bMWen6ImD6QdB_wYWgssffvOiNBVa-GaaBQ4CWV_Zv7xpPmhAkrpY0TytbdH-LnQgg/exec";
 
 let currentRoadtripData = null;
 
-function createElement(tag, options = {}) {
-  const element = document.createElement(tag);
-  if (options.text) element.textContent = options.text;
-  if (options.className) element.className = options.className;
-  if (options.html) element.innerHTML = options.html;
-  if (options.attrs) {
-    Object.entries(options.attrs).forEach(([name, value]) => {
-      element.setAttribute(name, value);
+// ============================================================================
+// Data loading
+// ============================================================================
+
+async function loadRoadtrip() {
+
+    const response = await fetch(API_URL, {
+        cache: "no-store",
+        mode: "cors"
     });
-  }
-  return element;
+
+    if (!response.ok) {
+        throw new Error(`Unable to load itinerary (${response.status})`);
+    }
+
+    return await response.json();
+
 }
 
-function parseEditorJson(raw) {
-  try {
-    return { value: JSON.parse(raw) };
-  } catch (error) {
-    return { error };
-  }
+// ============================================================================
+// Helpers
+// ============================================================================
+function cloneData(data) {
+    return JSON.parse(JSON.stringify(data));
 }
 
-function createRoadtripJsSnippet(data) {
-  return `const roadtripData = ${JSON.stringify(data, null, 2)};\n\nwindow.roadtripData = roadtripData;`;
+function minutesFromTime(value) {
+    if (value == null || value === "")
+        return NaN;
+
+    if (typeof value === 'number')
+        return value;
+
+    if (typeof value === 'string') {
+        const hm = value.match(/^(\d{1,2}):(\d{2})$/);
+        if (hm)
+            return Number(hm[1]) * 60 + Number(hm[2]);
+
+        // ISO datetime: extract HH:MM after 'T'
+        const iso = value.match(/T(\d{2}):(\d{2})/);
+        if (iso)
+            return Number(iso[1]) * 60 + Number(iso[2]);
+
+        const nums = value.match(/(\d{1,2}):(\d{2})/);
+        if (nums)
+            return Number(nums[1]) * 60 + Number(nums[2]);
+    }
+
+    return NaN;
+
 }
 
-function setupPlannerEditor(initialData) {
-  const editorToggle = document.getElementById('toggle-editor');
-  const editorContainer = document.getElementById('editor-container');
-  const editorTextarea = document.getElementById('planner-json-editor');
-  const previewButton = document.getElementById('preview-changes');
-  const saveButton = document.getElementById('save-whatsapp');
-  const copyButton = document.getElementById('copy-js');
-  const status = document.getElementById('editor-status');
+function formatTimeHHMM(totalMinutes) {
+    if (!Number.isFinite(totalMinutes))
+        return "";
 
-  if (!editorToggle || !editorContainer || !editorTextarea || !previewButton || !saveButton || !copyButton || !status) {
-    return;
-  }
+    const hh = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+    const mm = String(totalMinutes % 60).padStart(2, '0');
+    return `${hh}:${mm}`;
 
-  function setStatus(message, isError = false) {
-    status.textContent = message;
-    status.style.color = isError ? '#b91c1c' : '#0f172a';
-  }
+}
 
-  function updateEditorTextarea(data) {
-    editorTextarea.value = JSON.stringify(data, null, 2);
-  }
+function calculateDuration(item) {
+    if (item == null)
+        return NaN;
 
-  function openWhatsAppWithText(text) {
-    const encoded = encodeURIComponent(text);
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encoded}`;
-    window.open(whatsappUrl, '_blank');
-  }
+    if (item.end == null)
+        return NaN;
 
-  editorToggle.addEventListener('click', () => {
-    const hidden = editorContainer.classList.toggle('hidden');
-    editorToggle.textContent = hidden ? 'Edit planner' : 'Hide planner editor';
-  });
+    const startMin = minutesFromTime(item.start);
+    const endMin = minutesFromTime(item.end);
 
-  previewButton.addEventListener('click', () => {
-    const parsed = parseEditorJson(editorTextarea.value);
-    if (parsed.error) {
-      setStatus(`Invalid JSON: ${parsed.error.message}`, true);
-      return;
+    if (!Number.isFinite(startMin) || !Number.isFinite(endMin))
+        return NaN;
+
+    return Math.max(0, endMin - startMin);
+
+}
+
+function formatMinutes(total) {
+    if (!Number.isFinite(total))
+        return "";
+
+    const hours = Math.floor(total / 60);
+    const mins = total % 60;
+
+    if (hours > 0 && mins > 0)
+        return `${hours}h ${mins}m`;
+
+    if (hours > 0)
+        return `${hours}h`;
+
+    return `${mins}m`;
+
+}
+
+function createElement(tag, options = {}) {
+    const element = document.createElement(tag);
+    
+    if (options.className) {
+        element.className = options.className;
     }
-    currentRoadtripData = parsed.value;
-    renderPlanner(parsed.value);
-    setStatus('Preview updated from editor.');
-  });
-
-  saveButton.addEventListener('click', () => {
-    const parsed = parseEditorJson(editorTextarea.value);
-    if (parsed.error) {
-      setStatus(`Invalid JSON: ${parsed.error.message}`, true);
-      return;
+    
+    if (options.text) {
+        element.textContent = options.text;
     }
-    const snippet = createRoadtripJsSnippet(parsed.value);
-    openWhatsAppWithText(snippet);
-    setStatus('Opening WhatsApp with updated planner JS...');
-  });
-
-  copyButton.addEventListener('click', async () => {
-    const parsed = parseEditorJson(editorTextarea.value);
-    if (parsed.error) {
-      setStatus(`Invalid JSON: ${parsed.error.message}`, true);
-      return;
+    
+    if (options.attrs) {
+        Object.entries(options.attrs).forEach(([key, value]) => {
+            element.setAttribute(key, value);
+        });
     }
-    const snippet = createRoadtripJsSnippet(parsed.value);
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      try {
-        await navigator.clipboard.writeText(snippet);
-        setStatus('Planner JS copied to clipboard.');
-      } catch (error) {
-        setStatus('Copy failed. Please copy manually.', true);
-      }
-    } else {
-      setStatus('Clipboard not available. Copy manually.', true);
-    }
-  });
+    
+    return element;
+}
 
-  updateEditorTextarea(initialData);
+function render() {
+
+        planner.innerHTML = "";
+
+        const selected = checkboxes
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+
+        const showAll =
+            selected.includes("All") ||
+            selected.length === 0;
+
+        // load persisted collapsed prefs
+        const collapsedPrefs = loadCollapsedPrefs();
+
+        data.days.forEach(day => {
+
+            const visibleItems = day.items.filter(item => {
+
+                if (!item.type)
+                    return false;
+
+                return showAll ||
+                    selected.includes(item.type);
+
+            });
+
+            if (!visibleItems.length)
+                return;
+
+            const dayCard = createElement("article", {
+                className: "day-card"
+            });
+
+            const titleRow = createElement("div", {
+                className: "day-title"
+            });
+
+            const dayLabel = createElement("h2", {
+                text: formatDayLabel(day.date)
+            });
+
+            // collapse toggle
+            const isCollapsed = Boolean(collapsedPrefs[day.date]);
+            const toggle = createElement("button", {
+                className: "collapse-toggle",
+                text: isCollapsed ? "+" : "−"
+            });
+
+            toggle.addEventListener('click', () => {
+                const newState = !Boolean(collapsedPrefs[day.date]);
+                collapsedPrefs[day.date] = newState;
+                saveCollapsedPrefs(collapsedPrefs);
+                // re-render to apply state
+                render();
+            });
+
+            titleRow.appendChild(toggle);
+            titleRow.appendChild(dayLabel);
+
+            dayCard.appendChild(titleRow);
+
+            const list = createElement("ul", {
+                className: "item-list"
+            });
+
+            // hide list if collapsed
+            if (isCollapsed)
+                list.style.display = 'none';
+
+            visibleItems.forEach((item, index) => {
+
+                const isLastItem = index === visibleItems.length - 1;
+
+                const row = createElement("li", {
+                    className: "item-row"
+                });
+
+                const badge = createElement("span", {
+                    className: `badge ${item.type}`,
+                    text: item.type
+                });
+
+                const body = createElement("div", {
+                    className: "item-body"
+                });
+
+                body.appendChild(
+                    createElement("strong", {
+                        text: item.title
+                    })
+                );
+
+                body.appendChild(
+                    createElement("p", {
+                        text:
+                            item.notes ||
+                            "No additional notes."
+                    })
+                );
+
+                const meta = createElement("div", {
+                    className: "item-meta"
+                });
+
+                meta.textContent = formatItemTime(item, isLastItem);
+
+                const linkUrl = getLinkUrl(item);
+                const linkLabel = getLinkLabel(item);
+
+                if (linkUrl && linkLabel) {
+
+                    meta.append(
+                        " ",
+                        createElement("a", {
+
+                            text: linkLabel,
+
+                            className: "map-link",
+
+                            attrs: {
+
+                                href: linkUrl,
+                                target: "_blank",
+                                rel: "noopener noreferrer"
+
+                            }
+
+                        })
+                    );
+
+                }
+
+                row.appendChild(badge);
+                row.appendChild(body);
+                row.appendChild(meta);
+
+                list.appendChild(row);
+
+            });
+
+            dayCard.appendChild(list);
+
+            planner.appendChild(dayCard);
+
+        });
+
+    }
+
+    function formatDayLabel(dateStr) {
+
+        if (!dateStr)
+            return "";
+
+        // Weekday and month name arrays
+        const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        // If it's an ISO date (e.g. 2026-07-31T23:00:00.000Z), parse it
+        const isoMatch = dateStr.match(/^\d{4}-\d{2}-\d{2}/);
+
+        if (isoMatch) {
+            const d = new Date(dateStr);
+            if (!isNaN(d)) {
+                const dow = weekdays[d.getDay()];
+                const day = String(d.getDate()).padStart(2, "0");
+                const month = months[d.getMonth()];
+                return `${dow} ${day} ${month}`;
+            }
+        }
+
+        // Expect formats like "Sun 2 Aug" or "2 Aug" or "16 Aug"
+        const m = dateStr.match(/^(?:([A-Za-z]{3,})\s+)?(\d{1,2})\s+([A-Za-z]{3,})/);
+
+        if (m) {
+            let dow = m[1];
+            const day = String(m[2]).padStart(2, "0");
+            const month = m[3].slice(0, 3);
+
+            if (!dow) {
+                // Try to compute weekday by assuming current year
+                const year = new Date().getFullYear();
+                const parsed = new Date(`${m[2]} ${m[3]} ${year}`);
+                if (!isNaN(parsed)) {
+                    dow = weekdays[parsed.getDay()];
+                }
+            }
+
+            return dow ? `${dow} ${day} ${month}` : `${day} ${month}`;
+        }
+
+        return dateStr;
+
+    }
+
+// ============================================================================
+// Collapse prefs (per-day)
+// ============================================================================
+
+function loadCollapsedPrefs() {
+    try {
+        const raw = localStorage.getItem('roadtripCollapsedDays');
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveCollapsedPrefs(prefs) {
+    try {
+        localStorage.setItem('roadtripCollapsedDays', JSON.stringify(prefs));
+    } catch (e) {
+        // ignore
+    }
+}
+
+
+function formatItemTime(item, isLastItem = false) {
+
+    if (item.type === "Hotel") {
+        if (item.start) {
+            const startMin = minutesFromTime(item.start);
+            const displayStart = Number.isFinite(startMin) ? formatTimeHHMM(startMin) : item.start;
+            return displayStart || "Hotel";
+        }
+        return "Hotel";
+    }
+
+    const startMin = minutesFromTime(item.start);
+    const endMin = minutesFromTime(item.end);
+
+    const displayStart = Number.isFinite(startMin) ? formatTimeHHMM(startMin) : (item.start || "");
+    const displayEnd = Number.isFinite(endMin) ? formatTimeHHMM(endMin) : (item.end || "");
+
+    // Never show duration for the last item of the day
+    if (isLastItem) {
+        if (displayStart) return displayStart;
+        if (displayEnd) return displayEnd;
+        return "Time TBD";
+    }
+
+    // If both start and end exist (not null, not empty), show range with duration
+    if (displayStart && displayEnd && item.start != null && item.end != null) {
+        const mins = calculateDuration(item);
+        const dur = formatMinutes(mins);
+        return dur ? `${displayStart} - ${displayEnd} (${dur})` : `${displayStart} - ${displayEnd}`;
+    }
+
+    // If only start exists and is not null, show it
+    if (displayStart && item.start != null)
+        return displayStart;
+
+    // If only end exists and is not null, show it
+    if (displayEnd && item.end != null)
+        return displayEnd;
+
+    return "Time TBD";
+
+}
+
+// ============================================================================
+// Maps
+// ============================================================================
+
+function getLinkUrl(item) {
+    // Return mapUrl or directionUrl if available, or null
+    if (item.mapUrl)
+        return item.mapUrl;
+    if (item.directionUrl)
+        return item.directionUrl;
+    return null;
+}
+
+function getLinkLabel(item) {
+    // Return appropriate label based on which URL property exists
+    if (item.mapUrl)
+        return "Map";
+    if (item.directionUrl)
+        return "Directions";
+    return null;
+}
+
+// ============================================================================
+// Planner
+// ============================================================================
+
+function applyPlannerData(data) {
+
+    currentRoadtripData = cloneData(data);
+
+    renderPlanner(currentRoadtripData);
+
 }
 
 function renderPlanner(data) {
-  const planner = document.getElementById('planner');
-  const typeFilterContainer = document.getElementById('type-filter');
-  const travelTotal = document.getElementById('travel-total');
 
-  if (!planner || !typeFilterContainer || !travelTotal) {
-    return;
-  }
+    const planner = document.getElementById("planner");
+    const typeFilterContainer = document.getElementById("type-filter");
+    const travelTotal = document.getElementById("travel-total");
 
-  const typeFilterInputs = Array.from(typeFilterContainer.querySelectorAll('input[type="checkbox"]'));
-  const typeFilterLabels = Array.from(typeFilterContainer.querySelectorAll('.filter-checkbox-label'));
-  if (typeFilterInputs.length === 0) {
-    return;
-  }
-
-  const getMinutes = (duration) => {
-    if (!duration) return 0;
-    const match = duration.match(/(\d+)h\s*(\d+)?m?/);
-    if (!match) return 0;
-    const hours = Number(match[1] || 0);
-    const minutes = Number(match[2] || 0);
-    return hours * 60 + minutes;
-  };
-
-  const formatMinutes = (minutesTotal) => {
-    const hours = Math.floor(minutesTotal / 60);
-    const minutes = minutesTotal % 60;
-    if (hours && minutes) return `${hours}h ${minutes}m`;
-    if (hours) return `${hours}h`;    
-    return `${minutes}m`;
-  };
-
-  const getDirectionsUrl = (item) => {
-    if (item.directionUrl) {
-      return item.directionUrl;
-    }
-
-    if (item.from && item.to) {
-      const origin = encodeURIComponent(item.from.trim());
-      const destination = encodeURIComponent(item.to.trim());
-      const mode = item.travelMode ? `&travelmode=${encodeURIComponent(item.travelMode)}` : '';
-      return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${mode}`;
-    }
-
-    return null;
-  };
-
-  const getMapUrl = (item) => {
-    if (item.mapUrl) {
-      return item.mapUrl;
-    }
-
-    if (item.type === 'Travel') {
-      return getDirectionsUrl(item);
-    }
-
-    return null;
-  };
-
-  const calculateDuration = (item) => {
-    if (!item.start || !item.end) return 0;
-    const [startHour, startMin] = item.start.split(':').map(Number);
-    const [endHour, endMin] = item.end.split(':').map(Number);
-    const startTotalMin = startHour * 60 + startMin;
-    const endTotalMin = endHour * 60 + endMin;
-    return Math.max(0, endTotalMin - startTotalMin);
-  };
-
-  const totalTravelMinutes = data.days.reduce((sum, day) => {
-    return day.items.reduce((daySum, item) => {
-      if (item.type === 'Travel') {
-        return daySum + calculateDuration(item);
-      }
-      return daySum;
-    }, 0) + sum;
-  }, 0);
-
-  travelTotal.textContent = `Total travel time: ${formatMinutes(totalTravelMinutes)}`;
-
-  const render = () => {
-    const selectedValues = typeFilterInputs.filter((input) => input.checked).map((input) => input.value);
-    const showAll = selectedValues.includes('All') || selectedValues.length === 0;
-
-    planner.innerHTML = '';
-
-    data.days.forEach((day) => {
-      const visibleItems = day.items.filter((item) => {
-        return showAll || selectedValues.includes(item.type);
-      });
-
-      if (visibleItems.length === 0) {
+    if (!planner || !typeFilterContainer || !travelTotal)
         return;
-      }
 
-      const dayCard = createElement('article', { className: 'day-card' });
-      const titleRow = createElement('div', { className: 'day-title' });
+    const checkboxes = Array.from(
+        typeFilterContainer.querySelectorAll(
+            'input[type="checkbox"]'
+        )
+    );
 
-      const title = createElement('h2', { text: day.date });
+    const labels = Array.from(
+        typeFilterContainer.querySelectorAll(
+            ".filter-checkbox-label"
+        )
+    );
 
-      titleRow.append(title);
-      dayCard.appendChild(titleRow);
+    const totalTravel = data.days.reduce((sum, day) => {
 
-      const itemList = createElement('ul', { className: 'item-list' });
+        return sum + day.items.reduce((dayTotal, item) => {
 
-      visibleItems.forEach((item) => {
-        const row = createElement('li', { className: 'item-row' });
-        const badge = createElement('span', { className: `badge ${item.type}`, text: item.type });
-        const titleBlock = createElement('div', { className: 'item-body' });
-        const heading = createElement('strong', { text: item.title });
-        const note = createElement('p', { text: item.notes || 'No additional notes.' });
+            if (item.type !== "Travel")
+                return dayTotal;
 
-        titleBlock.append(heading, note);
+            return dayTotal + calculateDuration(item);
 
-        const timeInfo = createElement('div', { className: 'item-meta' });
-        const timeParts = [];
-        if (item.start && item.end) {
-          timeParts.push(`${item.start}-${item.end}`);
-          const durationMinutes = calculateDuration(item);
-          if (durationMinutes > 0) {
-            timeParts.push(`(${formatMinutes(durationMinutes)})`);
-          }
-        } else if (item.start) {
-          timeParts.push(item.start);
-        } else if (item.end) {
-          timeParts.push(item.end);
+        }, 0);
+
+    }, 0);
+
+    travelTotal.textContent =
+        `Total travel time: ${formatMinutes(totalTravel)}`;
+
+    function render() {
+
+        planner.innerHTML = "";
+
+        const selected = checkboxes
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+
+        const showAll =
+            selected.includes("All") ||
+            selected.length === 0;
+
+        data.days.forEach(day => {
+
+            const visibleItems = day.items.filter(item => {
+
+                if (!item.type)
+                    return false;
+
+                return showAll ||
+                    selected.includes(item.type);
+
+            });
+
+            if (!visibleItems.length)
+                return;
+
+            const dayCard = createElement("article", {
+                className: "day-card"
+            });
+
+            const titleRow = createElement("div", {
+                className: "day-title"
+            });
+
+            // collapse toggle
+            const collapsedPrefs = loadCollapsedPrefs();
+            const isCollapsed = Boolean(collapsedPrefs[day.date]);
+            const toggle = createElement("button", {
+                className: "collapse-toggle",
+                text: isCollapsed ? "+" : "−"
+            });
+
+            toggle.addEventListener('click', () => {
+                const newState = !Boolean(collapsedPrefs[day.date]);
+                collapsedPrefs[day.date] = newState;
+                saveCollapsedPrefs(collapsedPrefs);
+                // re-render to apply state
+                render();
+            });
+
+            titleRow.appendChild(
+                createElement("h2", {
+                    text: formatDayLabel(day.date)
+                })
+            );
+
+            titleRow.appendChild(toggle);
+
+            dayCard.appendChild(titleRow);
+
+            const list = createElement("ul", {
+                className: "item-list"
+            });
+
+            // hide list if collapsed
+            if (isCollapsed)
+                list.style.display = 'none';
+
+            visibleItems.forEach((item, index) => {
+
+                const isLastItem = index === visibleItems.length - 1;
+
+                // check if item is TBC
+                const isTBC = item.title && item.title.toUpperCase().includes('TBC');
+
+                const row = createElement("li", {
+                    className: `item-row ${isTBC ? 'tbc' : ''}`
+                });
+
+                const badge = createElement("span", {
+                    className: `badge ${item.type}`,
+                    text: item.type
+                });
+
+                const body = createElement("div", {
+                    className: "item-body"
+                });
+
+                body.appendChild(
+                    createElement("strong", {
+                        text: item.title
+                    })
+                );
+
+                body.appendChild(
+                    createElement("p", {
+                        text:
+                            item.notes ||
+                            "No additional notes."
+                    })
+                );
+
+                const meta = createElement("div", {
+                    className: "item-meta"
+                });
+
+                if (item.type === "Hotel") {
+
+                    meta.textContent = formatItemTime(item, isLastItem);
+
+                } else {
+
+                    meta.textContent = formatItemTime(item, isLastItem);
+
+                }
+
+                const linkUrl = getLinkUrl(item);
+                const linkLabel = getLinkLabel(item);
+
+                if (linkUrl && linkLabel) {
+
+                    meta.append(
+                        " ",
+                        createElement("a", {
+
+                            text: linkLabel,
+
+                            className: "map-link",
+
+                            attrs: {
+
+                                href: linkUrl,
+                                target: "_blank",
+                                rel: "noopener noreferrer"
+
+                            }
+
+                        })
+                    );
+
+                }
+
+                row.append(
+                    badge,
+                    body,
+                    meta
+                );
+
+                list.appendChild(row);
+
+            });
+
+            dayCard.appendChild(list);
+
+            planner.appendChild(dayCard);
+
+        });
+
+        if (!planner.children.length) {
+
+            planner.innerHTML =
+                `<div class="empty-state">
+                    No items match this filter.
+                 </div>`;
+
         }
 
-        timeInfo.textContent = timeParts.join(' ') || 'Time TBD';
-
-        if (item.type === 'Hotel') {
-          timeInfo.textContent = item.start ? `${item.start}` : 'Hotel night';
-        }
-
-        const mapUrl = getMapUrl(item);
-
-        if (mapUrl) {
-          const label = item.type === 'Travel' ? 'Directions' : 'Map';
-          const mapLink = createElement('a', {
-            text: label,
-            className: 'map-link',
-            attrs: {
-              href: mapUrl,
-              target: '_blank',
-              rel: 'noopener noreferrer'
-            }
-          });
-          timeInfo.append(' ', mapLink);
-        }
-
-        row.append(badge, titleBlock, timeInfo);
-        itemList.appendChild(row);
-      });
-
-      dayCard.appendChild(itemList);
-      planner.appendChild(dayCard);
-    });
-
-    if (planner.children.length === 0) {
-      planner.innerHTML = '<div class="empty-state">No items match this filter. Clear the filter to show the planner again.</div>';
     }
-  };
 
-  const syncAllCheckbox = () => {
-    const allCheckbox = typeFilterInputs.find((input) => input.value === 'All');
-    const checkedTypes = typeFilterInputs.filter((input) => input.checked && input.value !== 'All');
+    if (
+        typeFilterContainer.dataset.listenersAttached !==
+        "true"
+    ) {
 
-    if (allCheckbox && checkedTypes.length > 0) {
-      allCheckbox.checked = false;
+        checkboxes.forEach(cb => {
+
+            cb.addEventListener("change", () => {
+
+                const all =
+                    checkboxes.find(
+                        c => c.value === "All"
+                    );
+
+                const others =
+                    checkboxes.filter(
+                        c => c.value !== "All"
+                    );
+
+                if (cb.value === "All") {
+
+                    others.forEach(o => {
+                        o.checked = cb.checked;
+                    });
+
+                }
+                else {
+
+                    all.checked =
+                        others.every(o => o.checked);
+
+                }
+
+                render();
+
+            });
+
+        });
+
+        labels.forEach(label => {
+
+            const checkbox =
+                label.previousElementSibling;
+
+            if (!checkbox)
+                return;
+
+            label.addEventListener("click", e => {
+
+                e.preventDefault();
+
+                checkbox.checked =
+                    !checkbox.checked;
+
+                checkbox.dispatchEvent(
+                    new Event("change")
+                );
+
+            });
+
+        });
+
+        typeFilterContainer.dataset.listenersAttached =
+            "true";
+
     }
 
-    if (allCheckbox && checkedTypes.length === typeFilterInputs.length - 1) {
-      allCheckbox.checked = true;
-    }
-  };
+    render();
 
-  if (typeFilterContainer.dataset.listenersAttached !== 'true') {
-    typeFilterInputs.forEach((input) => {
-      input.addEventListener('change', () => {
-        const allCheckbox = typeFilterInputs.find((item) => item.value === 'All');
-        const otherCheckboxes = typeFilterInputs.filter((item) => item.value !== 'All');
-
-        if (input.value === 'All') {
-          otherCheckboxes.forEach((other) => {
-            other.checked = input.checked;
-          });
-        } else {
-          const checkedOtherCount = otherCheckboxes.filter((item) => item.checked).length;
-          if (allCheckbox) {
-            allCheckbox.checked = checkedOtherCount === otherCheckboxes.length;
-          }
-        }
-
-        if (allCheckbox && allCheckbox.checked && !input.checked && input.value === 'All') {
-          typeFilterInputs.forEach((other) => {
-            other.checked = other.value === 'All';
-          });
-        }
-
-        render();
-      });
-    });
-
-    typeFilterLabels.forEach((label) => {
-      const checkbox = label.previousElementSibling;
-      if (!checkbox || checkbox.tagName !== 'INPUT') {
-        return;
-      }
-
-      label.addEventListener('click', (event) => {
-        event.preventDefault();
-        checkbox.checked = !checkbox.checked;
-        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-    });
-
-    typeFilterContainer.dataset.listenersAttached = 'true';
-  }
-
-  render();
 }
 
-const roadtripPayload = typeof roadtripData !== 'undefined' ? roadtripData : window.roadtripData;
+// ============================================================================
+// Startup
+// ============================================================================
 
-if (roadtripPayload) {
-  currentRoadtripData = roadtripPayload;
-  setupPlannerEditor(roadtripPayload);
-  renderPlanner(roadtripPayload);
-} else {
-  console.error('Road trip data file failed to load.');
+async function initialisePlanner() {
+
+    try {
+
+        const planner = document.getElementById("planner");
+
+        if (planner) {
+
+            planner.innerHTML = `
+                <div class="loading">
+                    Loading itinerary...
+                </div>
+            `;
+
+        }
+
+        const roadtrip = await loadRoadtrip();
+
+        if (!roadtrip || !Array.isArray(roadtrip.days)) {
+            throw new Error("Invalid planner data.");
+        }
+
+        applyPlannerData(roadtrip);
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        const planner = document.getElementById("planner");
+
+        if (planner) {
+
+            planner.innerHTML = `
+                <div class="empty-state">
+                    <h3>Unable to load itinerary</h3>
+                    <p>Please try again later.</p>
+                </div>
+            `;
+
+        }
+
+    }
+
 }
+
+// ============================================================================
+// Modal controls
+// ============================================================================
+
+function setupFilterModal() {
+    const filterBtn = document.getElementById("filter-btn");
+    const filterModal = document.getElementById("filter-modal");
+    const filterModalClose = document.getElementById("filter-modal-close");
+
+    if (!filterBtn || !filterModal || !filterModalClose) return;
+
+    filterBtn.addEventListener('click', () => {
+        filterModal.classList.remove('hidden');
+    });
+
+    filterModalClose.addEventListener('click', () => {
+        filterModal.classList.add('hidden');
+    });
+
+    filterModal.addEventListener('click', (e) => {
+        if (e.target === filterModal) {
+            filterModal.classList.add('hidden');
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    setupFilterModal();
+    initialisePlanner();
+});

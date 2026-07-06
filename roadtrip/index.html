@@ -68,6 +68,16 @@
       font-size: 1rem;
     }
 
+    .travel-total {
+      margin: 0;
+      color: #1f2937;
+      font-weight: 600;
+    }
+
+    .filter-btn {
+      margin-left: auto;
+    }
+
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -76,37 +86,7 @@
       margin-bottom: 28px;
     }
 
-    .editor-panel {
-      margin-bottom: 24px;
-    }
-
-    .editor-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .editor-container {
-      display: block;
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid rgba(245, 158, 11, 0.18);
-      border-radius: 24px;
-      padding: 18px;
-      box-shadow: 0 16px 28px rgba(15, 23, 42, 0.05);
-    }
-
-    .editor-container.hidden {
-      display: none;
-    }
-
-    .editor-status {
-      color: #475569;
-      font-size: 0.95rem;
-      line-height: 1.4;
-    }
-
+    
     textarea#planner-json-editor {
       width: 100%;
       min-height: 320px;
@@ -227,6 +207,42 @@
       font-size: 0.95rem;
     }
 
+    .collapse-toggle {
+      background: none;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .collapse-toggle:hover {
+      border-color: #f97316;
+      color: #f97316;
+      background: rgba(249, 115, 22, 0.05);
+    }
+
+    .day-actions {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .add-item-btn {
+      padding: 8px 12px;
+      font-size: 0.86rem;
+      line-height: 1;
+    }
+
     .item-list {
       list-style: none;
       margin: 0;
@@ -237,13 +253,18 @@
 
     .item-row {
       display: grid;
-      grid-template-columns: minmax(120px, 1fr) 1.6fr minmax(120px, 1fr);
+      grid-template-columns: minmax(120px, 1fr) 1.6fr minmax(120px, 1fr) auto;
       gap: 14px;
       align-items: center;
       padding: 16px 18px;
       border-radius: 18px;
       background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,232,0.95));
       border: 1px solid rgba(251, 191, 36, 0.16);
+    }
+
+    .item-row.tbc {
+      background: linear-gradient(180deg, rgba(254,226,226,0.96), rgba(254,205,205,0.95));
+      border-color: rgba(220, 38, 38, 0.3);
     }
 
     .item-row strong {
@@ -294,6 +315,170 @@
       gap: 10px;
       flex-wrap: wrap;
       margin-top: 6px;
+    }
+
+    .item-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 6px 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      color: #475569;
+    }
+
+    .icon-btn:hover {
+      background: #fff;
+      border-color: #f97316;
+      color: #f97316;
+    }
+
+    .icon-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #ddd;
+      color: #cbd5e1;
+    }
+
+    .icon-btn:disabled:hover {
+      background: none;
+      border-color: #ddd;
+      color: #cbd5e1;
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 24px;
+      padding: 32px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #1f2937;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6b7280;
+    }
+
+    .modal-close-btn:hover {
+      color: #1f2937;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #1f2937;
+      font-size: 0.95rem;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #f97316;
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 28px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .modal-footer-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .btn.danger {
+      background: #dc2626;
+      color: white;
+    }
+
+    .btn.danger:hover {
+      background: #b91c1c;
+    }
+
+    .btn.hidden {
+      display: none;
     }
 
     .badge {
@@ -377,6 +562,21 @@
         color: #475569;
       }
 
+      .item-controls {
+        gap: 6px;
+        justify-content: flex-start;
+      }
+
+      .day-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .icon-btn {
+        padding: 5px 6px;
+        font-size: 0.8rem;
+      }
+
       .filter-checkbox {
         padding: 8px 10px;
         gap: 8px;
@@ -401,6 +601,21 @@
         margin-left: 6px;
         font-size: 0.9rem;
       }
+
+      .modal {
+        width: 95%;
+        padding: 20px;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-footer,
+      .modal-footer-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
     }
   </style>
 </head>
@@ -409,49 +624,127 @@
     <header>
       <h1>California Road Trip Planner</h1>
       <p id="travel-total" class="travel-total"></p>
+      <button class="btn secondary filter-btn" id="filter-btn">Filters</button>
     </header>
 
-    <div class="controls" id="type-filter">
-      <span class="checkbox-group-label">Show type</span>
-      <label class="filter-checkbox">
-        <input type="checkbox" name="type" value="All" checked />
-        <span class="filter-checkbox-label">All</span>
-      </label>
-      <label class="filter-checkbox">
-        <input type="checkbox" name="type" value="Activity" />
-        <span class="filter-checkbox-label">Activity</span>
-      </label>
-      <label class="filter-checkbox">
-        <input type="checkbox" name="type" value="Travel" />
-        <span class="filter-checkbox-label">Travel</span>
-      </label>
-      <label class="filter-checkbox">
-        <input type="checkbox" name="type" value="Hotel" />
-        <span class="filter-checkbox-label">Hotel</span>
-      </label>
-      <label class="filter-checkbox">
-        <input type="checkbox" name="type" value="Food" />
-        <span class="filter-checkbox-label">Food</span>
-      </label>
-    </div>
+    <section id="planner"></section>
 
-    <div class="editor-panel">
-      <button id="toggle-editor" class="btn">Edit planner</button>
-      <div id="editor-container" class="editor-container hidden">
-        <div class="editor-toolbar">
-          <button id="preview-changes" class="btn secondary">Preview changes</button>
-          <button id="save-whatsapp" class="btn">Save & open WhatsApp</button>
-          <button id="copy-js" class="btn secondary">Copy JS</button>
-          <span id="editor-status" class="editor-status">Edit the planner JSON, then preview or save.</span>
+    <!-- Filter Modal -->
+    <div id="filter-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Filter by Type</h2>
+          <button class="modal-close-btn" id="filter-modal-close">&times;</button>
         </div>
-        <textarea id="planner-json-editor" aria-label="Planner JSON editor"></textarea>
+        <div class="controls" id="type-filter">
+          <span class="checkbox-group-label">Show type</span>
+          <label class="filter-checkbox">
+            <input type="checkbox" name="type" value="All" checked />
+            <span class="filter-checkbox-label">All</span>
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" name="type" value="Activity" />
+            <span class="filter-checkbox-label">Activity</span>
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" name="type" value="Travel" />
+            <span class="filter-checkbox-label">Travel</span>
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" name="type" value="Hotel" />
+            <span class="filter-checkbox-label">Hotel</span>
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" name="type" value="Food" />
+            <span class="filter-checkbox-label">Food</span>
+          </label>
+        </div>
       </div>
     </div>
 
-    <section id="planner"></section>
+    <!-- Modal for editing items -->
+    <div id="item-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="item-modal-title">Edit Item</h2>
+          <button class="modal-close-btn">&times;</button>
+        </div>
+        <form id="item-form">
+          <div class="form-group">
+            <label for="item-type">Type:</label>
+            <select id="item-type" required>
+              <option value="Activity">Activity</option>
+              <option value="Travel">Travel</option>
+              <option value="Hotel">Hotel</option>
+              <option value="Food">Food</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="item-title">Title:</label>
+            <input type="text" id="item-title" placeholder="Event title" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="item-start">Start time:</label>
+              <input type="time" id="item-start" />
+            </div>
+            <div class="form-group">
+              <label for="item-end">End time:</label>
+              <input type="time" id="item-end" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="item-notes">Notes:</label>
+            <textarea id="item-notes" placeholder="Additional notes..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="item-map-url">Map URL:</label>
+            <input type="url" id="item-map-url" placeholder="https://www.google.com/maps/..." />
+          </div>
+
+          <div class="form-group">
+            <label for="item-direction-url">Direction URL:</label>
+            <input type="url" id="item-direction-url" placeholder="https://www.google.com/maps/dir/..." />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="item-from">From (location):</label>
+              <input type="text" id="item-from" placeholder="Starting location" />
+            </div>
+            <div class="form-group">
+              <label for="item-to">To (location):</label>
+              <input type="text" id="item-to" placeholder="Destination" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="item-travel-mode">Travel mode:</label>
+            <select id="item-travel-mode">
+              <option value="">Auto</option>
+              <option value="driving">Driving</option>
+              <option value="transit">Transit</option>
+              <option value="walking">Walking</option>
+              <option value="bicycling">Bicycling</option>
+            </select>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn danger" id="modal-delete-btn">Delete</button>
+            <div class="modal-footer-actions">
+              <button type="button" class="btn secondary" id="modal-cancel-btn">Cancel</button>
+              <button type="submit" class="btn">Save</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
   </main>
 
-  <script src="roadtrip-data.js"></script>
-  <script src="roadtrip.js" defer></script>
+  <script src="roadtrip.js"></script>
 </body>
 </html>

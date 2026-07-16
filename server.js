@@ -4,7 +4,8 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
-const APP_SCRIPT_URL = process.env.ROADTRIP_API_URL || 'https://script.google.com/macros/s/AKfycbwRyx0Rjo8mVjV_aA4Hhy2_hJsYmD888QS_MvdLGRf24Omh-6Zm40mjcffQd1RuIvsszw/exec';
+const APP_SCRIPT_URL = process.env.ROADTRIP_API_URL || '  "https://script.google.com/macros/s/AKfycbwIYbLmdmhcIWZz344rvIJwm60a1i3FrN2ElT5kUGQISbFOLrIZQa72xNLhIyjFNE8F/exec";
+';
 
 function contentTypeFor(filePath) {
   const ext = path.extname(filePath).toLowerCase();

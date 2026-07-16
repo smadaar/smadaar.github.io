@@ -1,11 +1,12 @@
 const roadtripData = {
-  "title": "California Road Trip",
+  "title": "Road trip",
   "subtitle": "August 2 - August 16",
   "days": [
     {
       "date": "Sun 2 Aug",
+      "notes": "Arrival day — collect essentials before checking in.",
       "items": [
-        {"type": "Activity", "title": "Land", "start": "15:45", "end": "16:30", "notes": "Arrive in San Francisco."},
+        {"type": "Activity", "title": "Land", "start": "15:45", "end": "16:30", "notes": "Arrive in San Francisco.", "link": "https://www.flysfo.com/"},
         {"type": "Activity", "title": "Chill in Union Square", "start": "16:30", "end": "22:00", "notes": "Relax after arrival."},
         {"type": "Food", "title": "TBC", "start": "19:00", "end": "20:00"},
         {"type": "Hotel", "title": "Barnes Hotel", "start": "22:00", "notes": "First night in SF.", "mapUrl": "https://www.google.com/maps/place/The+Barnes+San+Francisco,+Tapestry+Collection+by+Hilton/@37.786794,-122.4083045,859m/data=!3m2!1e3!4b1!4m9!3m8!1s0x8085808f3caa36a1:0xa86e6ddf1597b38e!5m2!4m1!1i2!8m2!3d37.786794!4d-122.4083045!16s%2Fg%2F11tnjvd2g6?entry=ttu&g_ep=EgoyMDI2MDYyMy4wIKXMDSoASAFQAw%3D%3D"}

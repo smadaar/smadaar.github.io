@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Road Trip Planner</title>
+  <title>Road trip</title>
   <style>
     :root {
       color-scheme: light;
@@ -31,6 +31,7 @@
     }
 
     header {
+      position: relative;
       margin-bottom: 32px;
       padding: 30px 28px;
       border-radius: 30px;
@@ -74,8 +75,28 @@
       font-weight: 600;
     }
 
-    .filter-btn {
-      margin-left: auto;
+    .header-actions {
+      position: absolute;
+      top: 24px;
+      right: 28px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .header-link {
+      border: 0;
+      padding: 0;
+      background: none;
+      color: #1f2937;
+      font: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .header-link:hover {
+      color: #9a3412;
     }
 
     .controls {
@@ -205,6 +226,21 @@
     .day-title .day-meta {
       color: #64748b;
       font-size: 0.95rem;
+    }
+
+    .day-notes {
+      margin: -4px 0 16px;
+      padding: 10px 12px;
+      border-left: 3px solid #fb923c;
+      border-radius: 0 10px 10px 0;
+      background: #fff7ed;
+      color: #7c2d12;
+      font-size: 0.94rem;
+      line-height: 1.45;
+    }
+
+    .day-title .day-actions {
+      margin-left: auto;
     }
 
     .collapse-toggle {
@@ -530,6 +566,72 @@
       text-align: center;
     }
 
+    /* Compact mode keeps the same information while reducing vertical space. */
+    .planner.compact {
+      max-width: 1180px;
+      padding-top: 18px;
+    }
+
+    .planner.compact header {
+      margin-bottom: 18px;
+      padding: 20px 24px;
+      border-radius: 20px;
+    }
+
+    .planner.compact .header-actions {
+      top: 18px;
+      right: 24px;
+    }
+
+    .planner.compact .day-card {
+      margin-bottom: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+    }
+
+    .planner.compact .day-title {
+      margin-bottom: 10px;
+    }
+
+    .planner.compact .day-title h2 {
+      font-size: 1.1rem;
+    }
+
+    .planner.compact .day-notes {
+      margin: -2px 0 10px;
+      padding: 7px 10px;
+      font-size: 0.86rem;
+    }
+
+    .planner.compact .item-list {
+      gap: 6px;
+    }
+
+    .planner.compact .item-row {
+      grid-template-columns: 92px minmax(190px, 1fr) minmax(105px, auto);
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 12px;
+    }
+
+    .planner.compact .badge {
+      padding: 5px 8px;
+      font-size: 0.68rem;
+    }
+
+    .planner.compact .item-row strong {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    .planner.compact .item-body p {
+      display: none;
+    }
+
+    .planner.compact .item-meta {
+      font-size: 0.82rem;
+    }
+
     @media (max-width: 720px) {
       .planner {
         padding: 18px 12px 40px;
@@ -540,10 +642,21 @@
         border-radius: 18px;
       }
 
+      .header-actions {
+        position: static;
+        margin-top: 12px;
+      }
+
       .day-card {
         padding: 14px;
         border-radius: 14px;
         margin-bottom: 14px;
+      }
+
+      .planner.compact .item-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+        padding: 8px 10px;
       }
 
       .item-row {
@@ -576,6 +689,11 @@
       .day-actions {
         width: 100%;
         justify-content: flex-start;
+      }
+
+      .day-title .day-actions {
+        width: auto;
+        justify-content: flex-end;
       }
 
       .icon-btn {
@@ -628,9 +746,12 @@
 <body>
   <main class="planner">
     <header>
-      <h1>California Road Trip Planner</h1>
+      <h1>Road trip</h1>
       <p id="travel-total" class="travel-total"></p>
-      <button class="btn secondary filter-btn" id="filter-btn">Filters</button>
+      <nav class="header-actions" aria-label="Planner controls">
+        <button class="header-link" id="compact-mode-btn" type="button" aria-pressed="false">Compact view</button>
+        <a class="header-link" id="filter-btn" href="#filter-modal">Filters</a>
+      </nav>
     </header>
 
     <section id="planner"></section>
@@ -755,6 +876,6 @@
     </div>
   </main>
 
-  <script src="roadtrip.js?v=20260706"></script>
+  <script src="roadtrip.js?v=20260716.5"></script>
 </body>
 </html>

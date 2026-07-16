@@ -8,7 +8,8 @@ from urllib.parse import urlparse
 PORT = int(os.environ.get("PORT", "3000"))
 APP_SCRIPT_URL = os.environ.get(
     "ROADTRIP_API_URL",
-    "https://script.google.com/macros/s/AKfycbwRyx0Rjo8mVjV_aA4Hhy2_hJsYmD888QS_MvdLGRf24Omh-6Zm40mjcffQd1RuIvsszw/exec",
+    "  "https://script.google.com/macros/s/AKfycbwIYbLmdmhcIWZz344rvIJwm60a1i3FrN2ElT5kUGQISbFOLrIZQa72xNLhIyjFNE8F/exec";
+",
 )
 
 

@@ -6,7 +6,7 @@
 //export const API_URL_OLD =
 //  "https://script.google.com/macros/s/AKfycby8bMWen6ImD6QdB_wYWgssffvOiNBVa-GaaBQ4CWV_Zv7xpPmhAkrpY0TytbdH-LnQgg/exec";
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbz3QihBefnQtGi7OrEAKEGepPgPmvlOhssO1po1VOe8g2fFmmgY6bcNCoYWFLAG3N85/exec";
+  "https://script.google.com/macros/s/AKfycbwIYbLmdmhcIWZz344rvIJwm60a1i3FrN2ElT5kUGQISbFOLrIZQa72xNLhIyjFNE8F/exec";
   
 
 let currentRoadtripData = null;
@@ -517,9 +517,27 @@ function renderPlanner(data) {
                 })
             );
 
-            titleRow.appendChild(toggle);
+            const dayActions = createElement("div", {
+                className: "day-actions"
+            });
+
+            dayActions.appendChild(toggle);
+            titleRow.appendChild(dayActions);
 
             dayCard.appendChild(titleRow);
+
+            if (day.notes) {
+                const notes = createElement("p", {
+                    className: "day-notes",
+                    text: day.notes
+                });
+
+                if (isCollapsed) {
+                    notes.hidden = true;
+                }
+
+                dayCard.appendChild(notes);
+            }
 
             const list = createElement("ul", {
                 className: "item-list"
@@ -601,6 +619,21 @@ function renderPlanner(data) {
                         })
                     );
 
+                }
+
+                if (item.link) {
+                    meta.append(
+                        " ",
+                        createElement("a", {
+                            text: "Link",
+                            className: "map-link",
+                            attrs: {
+                                href: item.link,
+                                target: "_blank",
+                                rel: "noopener noreferrer"
+                            }
+                        })
+                    );
                 }
 
                 row.append(
@@ -762,7 +795,8 @@ function setupFilterModal() {
 
     if (!filterBtn || !filterModal || !filterModalClose) return;
 
-    filterBtn.addEventListener('click', () => {
+    filterBtn.addEventListener('click', (event) => {
+        event.preventDefault();
         filterModal.classList.remove('hidden');
     });
 
@@ -777,7 +811,31 @@ function setupFilterModal() {
     });
 }
 
+function setupCompactMode() {
+    const planner = document.querySelector(".planner");
+    const button = document.getElementById("compact-mode-btn");
+
+    if (!planner || !button) return;
+
+    const isCompact = localStorage.getItem("roadtripCompactMode") === "true";
+
+    function applyCompactMode(enabled) {
+        planner.classList.toggle("compact", enabled);
+        button.textContent = enabled ? "Comfortable view" : "Compact view";
+        button.setAttribute("aria-pressed", String(enabled));
+    }
+
+    applyCompactMode(isCompact);
+
+    button.addEventListener("click", () => {
+        const enabled = !planner.classList.contains("compact");
+        localStorage.setItem("roadtripCompactMode", String(enabled));
+        applyCompactMode(enabled);
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     setupFilterModal();
+    setupCompactMode();
     initialisePlanner();
 });

@@ -442,6 +442,36 @@ function renderPlanner(data) {
         )
     );
 
+    const filterStorageKey = () =>
+        planner.classList.contains("calendar-view")
+            ? "roadtripCalendarFilters"
+            : "roadtripListFilters";
+
+    function saveFilterState() {
+        try {
+            localStorage.setItem(
+                filterStorageKey(),
+                JSON.stringify(checkboxes.filter(cb => cb.checked).map(cb => cb.value))
+            );
+        } catch (e) {
+            // Ignore unavailable storage.
+        }
+    }
+
+    function restoreFilterState() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(filterStorageKey()) || "null");
+            const values = Array.isArray(saved) && saved.length
+                ? saved
+                : (planner.classList.contains("calendar-view") ? ["Activity", "Hotel"] : ["All"]);
+            checkboxes.forEach(cb => { cb.checked = values.includes(cb.value); });
+        } catch (e) {
+            // Ignore malformed or unavailable storage.
+        }
+    }
+
+    restoreFilterState();
+
     const totalDrive = data.days.reduce((sum, day) => {
 
         return sum + day.items.reduce((dayTotal, item) => {
@@ -464,6 +494,8 @@ function renderPlanner(data) {
 
         planner.innerHTML = "";
 
+        const calendarMode = planner.classList.contains("calendar-view");
+
         const selected = checkboxes
             .filter(cb => cb.checked)
             .map(cb => cb.value);
@@ -484,7 +516,7 @@ function renderPlanner(data) {
 
             });
 
-            if (!visibleItems.length)
+            if (!visibleItems.length && !calendarMode)
                 return;
 
             const dayCard = createElement("article", {
@@ -697,6 +729,7 @@ function renderPlanner(data) {
                 }
 
                 render();
+                saveFilterState();
 
             });
 
@@ -726,7 +759,12 @@ function renderPlanner(data) {
         });
 
         typeFilterContainer.dataset.listenersAttached =
-            "true";
+        "true";
+
+        planner.addEventListener("roadtrip-view-changed", () => {
+            restoreFilterState();
+            render();
+        });
 
     }
 
@@ -834,8 +872,33 @@ function setupCompactMode() {
     });
 }
 
+function setupCalendarMode() {
+    const planner = document.getElementById("planner");
+    const button = document.getElementById("calendar-mode-btn");
+
+    if (!planner || !button) return;
+
+    const isCalendar = localStorage.getItem("roadtripCalendarMode") === "true";
+
+    function applyCalendarMode(enabled) {
+        planner.classList.toggle("calendar-view", enabled);
+        button.textContent = enabled ? "List view" : "Calendar view";
+        button.setAttribute("aria-pressed", String(enabled));
+        planner.dispatchEvent(new Event("roadtrip-view-changed"));
+    }
+
+    applyCalendarMode(isCalendar);
+
+    button.addEventListener("click", () => {
+        const enabled = !planner.classList.contains("calendar-view");
+        localStorage.setItem("roadtripCalendarMode", String(enabled));
+        applyCalendarMode(enabled);
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     setupFilterModal();
     setupCompactMode();
+    setupCalendarMode();
     initialisePlanner();
 });

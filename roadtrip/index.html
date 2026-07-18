@@ -632,6 +632,37 @@
       font-size: 0.82rem;
     }
 
+    /* Calendar mode lays days out as a weekly planner: seven day boxes per row. */
+    #planner.calendar-view {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+
+    #planner.calendar-view .day-card { min-width: 0; margin: 0; padding: 14px; border-radius: 16px; }
+    #planner.calendar-view .day-title { margin-bottom: 10px; gap: 8px; }
+    #planner.calendar-view .day-title h2 { font-size: 0.98rem; }
+    #planner.calendar-view .day-actions { display: none; }
+    #planner.calendar-view .day-notes { margin: 0 0 10px; padding: 7px 8px; font-size: 0.78rem; }
+    #planner.calendar-view .item-list {
+      display: block;
+      list-style: disc;
+      padding-left: 18px;
+    }
+    #planner.calendar-view .item-row {
+      display: list-item;
+      padding: 0;
+      margin: 0 0 5px;
+      background: none !important;
+      border: 0;
+      border-radius: 0;
+    }
+    #planner.calendar-view .badge { display: none; }
+    #planner.calendar-view .item-row strong { margin: 0; font-size: 0.82rem; line-height: 1.25; }
+    #planner.calendar-view .item-body p { display: none; }
+    #planner.calendar-view .item-meta { display: none; }
+
     @media (max-width: 720px) {
       .planner {
         padding: 18px 12px 40px;
@@ -658,6 +689,8 @@
         gap: 5px;
         padding: 8px 10px;
       }
+
+      #planner.calendar-view { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 
       .item-row {
         grid-template-columns: 1fr;
@@ -750,6 +783,7 @@
       <p id="travel-total" class="travel-total"></p>
       <nav class="header-actions" aria-label="Planner controls">
         <button class="header-link" id="compact-mode-btn" type="button" aria-pressed="false">Compact view</button>
+        <button class="header-link" id="calendar-mode-btn" type="button" aria-pressed="false">Calendar view</button>
         <a class="header-link" id="filter-btn" href="#filter-modal">Filters</a>
       </nav>
     </header>

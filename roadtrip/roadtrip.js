@@ -504,6 +504,26 @@ function renderPlanner(data) {
             selected.includes("All") ||
             selected.length === 0;
 
+        // Calendar weeks run Monday–Sunday. Add leading empty cells so the
+        // first itinerary day lands in the correct weekday column.
+        if (calendarMode && data.days.length) {
+            const firstDate = data.days[0].date || "";
+            let parsedDate = new Date(firstDate);
+            if (Number.isNaN(parsedDate.getTime())) {
+                const match = firstDate.match(/(?:[A-Za-z]{3,}\s+)?(\d{1,2}\s+[A-Za-z]{3,})/);
+                if (match) parsedDate = new Date(`${match[1]} ${new Date().getFullYear()}`);
+            }
+            if (!Number.isNaN(parsedDate.getTime())) {
+                const mondayIndex = (parsedDate.getDay() + 6) % 7;
+                for (let index = 0; index < mondayIndex; index += 1) {
+                    planner.appendChild(createElement("div", {
+                        className: "calendar-spacer",
+                        attrs: { "aria-hidden": "true" }
+                    }));
+                }
+            }
+        }
+
         data.days.forEach(day => {
 
             const visibleItems = day.items.filter(item => {

@@ -38,10 +38,10 @@ async function jsonFrom(response) {
 async function callApi(action, values = {}) {
   if (!apiUrl()) throw new Error("Add the deployed admin API URL first.");
   const body = new URLSearchParams({ action, ...values });
-  const response = await fetch(apiUrl(), { method: "POST", body });
-  const result = await jsonFrom(response);
-  if (!response.ok || !result.ok) throw new Error(result.error || "The admin API request failed.");
-  return result;
+  // Apps Script Web Apps do not reliably return CORS headers for POST requests
+  // from GitHub Pages. This still sends the form-encoded mutation; the caller
+  // immediately reloads the CORS-readable list endpoint to show the result.
+  await fetch(apiUrl(), { method: "POST", body, mode: "no-cors" });
 }
 
 async function loadItems() {
@@ -97,11 +97,9 @@ function nextOrderForDay(dayId) {
 function render() {
   const items = [...data.items].sort((a, b) => Number(a.day) - Number(b.day) || Number(a.order) - Number(b.order));
   list.innerHTML = items.length ? items.map(item => `<tr>
-    <td>${escapeHtml(dayLabel(item.day))}</td><td>${escapeHtml(item.order)}</td><td>${escapeHtml(item.type)}</td>
-    <td class="title">${escapeHtml(item.title)}</td><td>${escapeHtml(formatTime(item.start))}</td><td>${escapeHtml(formatTime(item.end))}</td>
-    <td class="notes" title="${escapeHtml(item.notes)}">${escapeHtml(item.notes)}</td>
+    <td>${escapeHtml(dayLabel(item.day))}</td><td class="title">${escapeHtml(item.title)}</td>
     <td><div class="actions"><button class="icon secondary" data-action="up" data-id="${escapeHtml(item.id)}" title="Move up">↑</button><button class="icon secondary" data-action="down" data-id="${escapeHtml(item.id)}" title="Move down">↓</button><button class="icon secondary" data-action="add-below" data-id="${escapeHtml(item.id)}" title="Add an item below">+</button><button class="icon secondary" data-action="edit" data-id="${escapeHtml(item.id)}">Edit</button><button class="icon danger" data-action="delete" data-id="${escapeHtml(item.id)}">Delete</button></div></td>
-  </tr>`).join("") : '<tr><td colspan="8" class="hint">No items found.</td></tr>';
+  </tr>`).join("") : '<tr><td colspan="3" class="hint">No items found.</td></tr>';
 }
 
 function renderDays() {

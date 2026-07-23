@@ -1,6 +1,20 @@
+// For a standalone Apps Script project, paste the ID from the spreadsheet URL
+// here. Leave empty only when this script is bound directly to that spreadsheet.
+const ROADTRIP_SPREADSHEET_ID = "1NTkw-Ezu3J-vu5Ix_2gSeBXFExAIqQdCj3yR3UzCdqk";
+
+function roadtripSpreadsheet() {
+  const spreadsheet = ROADTRIP_SPREADSHEET_ID
+    ? SpreadsheetApp.openById(ROADTRIP_SPREADSHEET_ID)
+    : SpreadsheetApp.getActiveSpreadsheet();
+  if (!spreadsheet) {
+    throw new Error("No active spreadsheet. Set ROADTRIP_SPREADSHEET_ID in Code.gs.");
+  }
+  return spreadsheet;
+}
+
 function doGet() {
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = roadtripSpreadsheet();
 
   const daySheet = ss.getSheetByName("Itinerary DAYS");
   const itemSheet = ss.getSheetByName("Itinerary");
@@ -63,6 +77,7 @@ function doGet() {
             title: item.title
           };
 
+          if (item.id) obj.id = item.id;
           if (item.start) obj.start = item.start;
           if (item.end) obj.end = item.end;
           if (item.notes) obj.notes = item.notes;

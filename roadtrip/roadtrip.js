@@ -3,10 +3,8 @@
 // Read-only version backed by Google Sheets
 // ============================================================================
 
-//export const API_URL_OLD =
-//  "https://script.google.com/macros/s/AKfycby8bMWen6ImD6QdB_wYWgssffvOiNBVa-GaaBQ4CWV_Zv7xpPmhAkrpY0TytbdH-LnQgg/exec";
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbwIYbLmdmhcIWZz344rvIJwm60a1i3FrN2ElT5kUGQISbFOLrIZQa72xNLhIyjFNE8F/exec";
+  "https://script.google.com/macros/s/AKfycbyyPBf6I3ocCKX59m577EN9vu4iSiszNBdf5St64GTg_s7fu6kvSDTzEca9tz7VegtE/exec";
   
 
 let currentRoadtripData = null;
@@ -597,6 +595,16 @@ function renderPlanner(data) {
                     }
                     content.appendChild(title);
 
+                    if (item.id) {
+                        const editButton = createElement("button", {
+                            className: "icon-btn summary-item-edit",
+                            text: "\u2699",
+                            attrs: { type: "button", "aria-label": `Edit ${item.title || "item"}`, title: "Edit item" }
+                        });
+                        editButton.addEventListener("click", () => openAdminModal(item.id));
+                        content.appendChild(editButton);
+                    }
+
                     if (item.notes) {
                         content.appendChild(createElement("p", {
                             className: "summary-notes",
@@ -775,6 +783,16 @@ function renderPlanner(data) {
                     body,
                     meta
                 );
+
+                if (item.id) {
+                    const editButton = createElement("button", {
+                        className: "icon-btn item-edit-btn",
+                        text: "\u2699",
+                        attrs: { type: "button", "aria-label": `Edit ${item.title || "item"}`, title: "Edit item" }
+                    });
+                    editButton.addEventListener("click", () => openAdminModal(item.id));
+                    row.appendChild(editButton);
+                }
 
                 list.appendChild(row);
 
@@ -974,6 +992,29 @@ function setupCompactMode() {
     });
 }
 
+function openAdminModal(itemId = "") {
+    const modal = document.getElementById("admin-modal");
+    const frame = document.getElementById("admin-frame");
+    if (!modal || !frame) return;
+    frame.src = itemId ? `admin.html?item=${encodeURIComponent(itemId)}` : "admin.html";
+    modal.classList.remove("hidden");
+}
+
+function setupAdminModal() {
+    const button = document.getElementById("admin-launch-btn");
+    const modal = document.getElementById("admin-modal");
+    const close = document.getElementById("admin-modal-close");
+
+    if (!button || !modal || !close) return;
+
+    const hide = () => modal.classList.add("hidden");
+    button.addEventListener("click", () => openAdminModal());
+    close.addEventListener("click", hide);
+    modal.addEventListener("click", event => {
+        if (event.target === modal) hide();
+    });
+}
+
 function setupCalendarMode() {
     const planner = document.getElementById("planner");
     const button = document.getElementById("calendar-mode-btn");
@@ -1042,6 +1083,7 @@ function setupSummaryMode() {
 
 document.addEventListener("DOMContentLoaded", () => {
     setupFilterModal();
+    setupAdminModal();
     setupCompactMode();
     setupCalendarMode();
     setupSummaryMode();

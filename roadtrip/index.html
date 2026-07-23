@@ -99,6 +99,32 @@
       color: #9a3412;
     }
 
+    .admin-launch {
+      font-size: 1.35rem;
+      line-height: 1;
+      text-decoration: none;
+    }
+
+    .admin-modal .modal {
+      width: min(1360px, 96vw);
+      max-width: none;
+      height: min(900px, 92vh);
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .admin-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fff;
+    }
+
+    .admin-modal-header h2 { margin: 0; font-size: 1.1rem; }
+    .admin-modal iframe { display: block; width: 100%; height: calc(100% - 57px); border: 0; }
+
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -760,6 +786,7 @@
     }
     #planner.summary-view .summary-title[href] { text-decoration: none; }
     #planner.summary-view .summary-title[href]:hover { text-decoration: underline; }
+    #planner.summary-view .summary-item-edit { margin-left: 10px; vertical-align: middle; }
     #planner.summary-view .summary-notes,
     #planner.summary-view .summary-end { margin: 8px 0 0; color: #4b5563; line-height: 1.4; }
     #planner.summary-view .summary-end { color: #52657a; }
@@ -895,6 +922,7 @@
         <button class="header-link" id="calendar-mode-btn" type="button" aria-pressed="false">Calendar view</button>
         <button class="header-link" id="summary-mode-btn" type="button" aria-pressed="false">Summary view</button>
         <a class="header-link" id="filter-btn" href="#filter-modal">Filters</a>
+        <button class="header-link admin-launch" id="admin-launch-btn" type="button" aria-label="Edit itinerary" title="Edit itinerary">&#9881;</button>
       </nav>
     </header>
 
@@ -934,6 +962,16 @@
             <span class="filter-checkbox-label">Food</span>
           </label>
         </div>
+      </div>
+    </div>
+
+    <div id="admin-modal" class="modal-overlay admin-modal hidden" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
+      <div class="modal">
+        <div class="admin-modal-header">
+          <h2 id="admin-modal-title">Edit itinerary</h2>
+          <button class="modal-close-btn" id="admin-modal-close" type="button" aria-label="Close editor">&times;</button>
+        </div>
+        <iframe id="admin-frame" src="admin.html" title="Itinerary editor"></iframe>
       </div>
     </div>
 
@@ -1020,6 +1058,6 @@
     </div>
   </main>
 
-  <script src="roadtrip.js?v=20260723.1"></script>
+  <script src="roadtrip.js?v=20260723.3"></script>
 </body>
 </html>

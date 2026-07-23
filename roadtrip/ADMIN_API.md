@@ -14,7 +14,7 @@ The admin script automatically adds an `id` column to `Itinerary` when it is fir
 ## Deploy
 
 1. Create a standalone Apps Script project attached to the same spreadsheet.
-2. Copy in [admin-apiscript.js](admin-apiscript.js).
+2. Copy in [admin-apiscript.js](admin-apiscript.js). If the project is standalone rather than sheet-bound, paste the spreadsheet ID (the portion between `/d/` and `/edit` in its URL) into `ADMIN_SPREADSHEET_ID` at the top of the script.
 3. Deploy it as a Web App and copy the `/exec` URL.
 4. Open `admin.html`, paste that URL into the connection field, save it, then load items.
 

@@ -9,6 +9,19 @@
 const ADMIN_DAY_SHEET = "Itinerary DAYS";
 const ADMIN_ITEM_SHEET = "Itinerary";
 const ITEM_FIELDS = ["day", "order", "type", "title", "start", "end", "notes", "from", "to", "travelMode", "mapUrl", "directionUrl", "link"];
+// For a standalone Apps Script project, paste the ID from the spreadsheet URL
+// here. Leave empty only when this script is bound directly to that spreadsheet.
+const ADMIN_SPREADSHEET_ID = "1NTkw-Ezu3J-vu5Ix_2gSeBXFExAIqQdCj3yR3UzCdqk";
+
+function adminSpreadsheet() {
+  const spreadsheet = ADMIN_SPREADSHEET_ID
+    ? SpreadsheetApp.openById(ADMIN_SPREADSHEET_ID)
+    : SpreadsheetApp.getActiveSpreadsheet();
+  if (!spreadsheet) {
+    throw new Error("No active spreadsheet. Set ADMIN_SPREADSHEET_ID in Code.gs.");
+  }
+  return spreadsheet;
+}
 
 function doGet(e) {
   try {
@@ -44,7 +57,7 @@ function jsonResponse(value) {
 }
 
 function table(sheetName) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  const sheet = adminSpreadsheet().getSheetByName(sheetName);
   if (!sheet) throw new Error(`Missing sheet: ${sheetName}`);
   const values = sheet.getDataRange().getValues();
   if (!values.length) throw new Error(`${sheetName} needs a header row.`);

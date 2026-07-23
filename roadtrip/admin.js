@@ -12,6 +12,7 @@ const DEFAULT_ADMIN_API_URL = "";
 let data = { days: [], items: [] };
 let editingId = null;
 let editingDayId = null;
+let requestedItemId = new URLSearchParams(window.location.search).get("item");
 
 apiUrlInput.value = localStorage.getItem("roadtripAdminApiUrl") || DEFAULT_ADMIN_API_URL;
 
@@ -54,6 +55,12 @@ async function loadItems() {
     render();
     renderDays();
     newButton.disabled = false;
+    if (requestedItemId) {
+      const item = data.items.find(value => String(value.id) === requestedItemId);
+      requestedItemId = null;
+      if (item) openEditor(item);
+      else showStatus("That item is no longer available.", true);
+    }
     showStatus(`${data.items.length} items loaded.`);
   } catch (error) { showStatus(error.message, true); }
 }
@@ -175,3 +182,5 @@ dayForm.addEventListener("submit", async event => {
     dayDialog.close(); await loadItems(); showStatus("Day saved.");
   } catch (error) { showStatus(error.message, true); }
 });
+
+if (apiUrl()) loadItems();

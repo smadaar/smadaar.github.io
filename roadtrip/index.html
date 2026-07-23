@@ -663,6 +663,107 @@
     #planner.calendar-view .item-body p { display: none; }
     #planner.calendar-view .item-meta { display: none; }
 
+    /* Summary mode is a quick, chronological version of the itinerary. */
+    #planner.summary-view {
+      display: grid;
+      gap: 24px;
+    }
+
+    #planner.summary-view .summary-day {
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 14px 34px rgba(37, 99, 235, 0.09);
+      border: 1px solid #e7edf6;
+      border-radius: 18px;
+    }
+
+    #planner.summary-view .summary-day-label {
+      margin: 0;
+      padding: 9px 24px;
+      background: #f3f5f9;
+      color: #4b5563;
+      font-size: 0.92rem;
+      font-weight: 750;
+    }
+
+    #planner.summary-view .summary-day-notes {
+      margin: 0;
+      padding: 0 24px 10px;
+      background: #f3f5f9;
+      color: #64748b;
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+
+    #planner.summary-view .summary-timeline {
+      list-style: none;
+      margin: 0;
+      padding: 14px 24px 18px;
+    }
+
+    #planner.summary-view .summary-item {
+      display: grid;
+      grid-template-columns: 88px 52px minmax(0, 1fr);
+      min-height: 82px;
+    }
+
+    #planner.summary-view .summary-time {
+      padding: 12px 14px 0 0;
+      color: #172033;
+      font-size: 0.98rem;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    #planner.summary-view .summary-marker {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+
+    #planner.summary-view .summary-marker::after {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: #087ac1;
+      content: "";
+    }
+
+    #planner.summary-view .summary-item:first-child .summary-marker::after { top: 36px; }
+    #planner.summary-view .summary-item:last-child .summary-marker::after { bottom: auto; height: 36px; }
+
+    #planner.summary-view .summary-icon {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      margin-top: 6px;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      background: #087ac1;
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 800;
+      box-shadow: 0 0 0 1px #087ac1;
+    }
+
+    #planner.summary-view .summary-content { padding: 10px 0 20px 4px; }
+    #planner.summary-view .summary-title {
+      display: inline-block;
+      color: #0671c1;
+      font-size: 1rem;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+    #planner.summary-view .summary-title[href] { text-decoration: none; }
+    #planner.summary-view .summary-title[href]:hover { text-decoration: underline; }
+    #planner.summary-view .summary-notes,
+    #planner.summary-view .summary-end { margin: 8px 0 0; color: #4b5563; line-height: 1.4; }
+    #planner.summary-view .summary-end { color: #52657a; }
+
     @media (max-width: 720px) {
       .planner {
         padding: 18px 12px 40px;
@@ -691,6 +792,14 @@
       }
 
       #planner.calendar-view { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+      #planner.summary-view { gap: 16px; }
+      #planner.summary-view .summary-day-label { padding: 9px 14px; }
+      #planner.summary-view .summary-day-notes { padding: 0 14px 9px; }
+      #planner.summary-view .summary-timeline { padding: 10px 12px 14px; }
+      #planner.summary-view .summary-item { grid-template-columns: 66px 46px minmax(0, 1fr); }
+      #planner.summary-view .summary-time { padding-right: 8px; font-size: 0.86rem; }
+      #planner.summary-view .summary-content { padding-left: 2px; }
 
       .item-row {
         grid-template-columns: 1fr;
@@ -784,6 +893,7 @@
       <nav class="header-actions" aria-label="Planner controls">
         <button class="header-link" id="compact-mode-btn" type="button" aria-pressed="false">Compact view</button>
         <button class="header-link" id="calendar-mode-btn" type="button" aria-pressed="false">Calendar view</button>
+        <button class="header-link" id="summary-mode-btn" type="button" aria-pressed="false">Summary view</button>
         <a class="header-link" id="filter-btn" href="#filter-modal">Filters</a>
       </nav>
     </header>
@@ -910,6 +1020,6 @@
     </div>
   </main>
 
-  <script src="roadtrip.js?v=20260716.5"></script>
+  <script src="roadtrip.js?v=20260723.1"></script>
 </body>
 </html>

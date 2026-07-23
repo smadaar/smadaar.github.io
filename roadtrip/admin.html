@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Road trip admin</title>
+  <style>
+    :root { font-family: Inter, system-ui, sans-serif; color: #172033; background: #f4f7fb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 1360px; margin: auto; padding: 32px 24px 56px; }
+    header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+    h1 { margin: 0; font-size: clamp(1.7rem, 4vw, 2.35rem); }
+    .subtitle, .hint { color: #64748b; }
+    .endpoint { display: grid; grid-template-columns: minmax(250px, 1fr) auto auto; gap: 8px; margin: 0 0 22px; padding: 14px; border-radius: 12px; background: #e8eff8; }
+    input, select, textarea, button { font: inherit; }
+    input, select, textarea { width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; }
+    textarea { min-height: 78px; resize: vertical; }
+    button { border: 0; border-radius: 7px; padding: 9px 13px; font-weight: 700; cursor: pointer; background: #087ac1; color: #fff; }
+    button:hover { background: #0668a6; }
+    button.secondary { background: #e2e8f0; color: #243247; }
+    button.danger { background: #c93535; }
+    button.icon { min-width: 33px; padding: 7px; }
+    button:disabled { cursor: not-allowed; opacity: .5; }
+    .toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .table-wrap { overflow-x: auto; border: 1px solid #dce5f0; border-radius: 12px; background: #fff; }
+    table { width: 100%; border-collapse: collapse; min-width: 1040px; }
+    th, td { padding: 11px 10px; border-bottom: 1px solid #edf1f6; text-align: left; vertical-align: top; }
+    th { position: sticky; top: 0; background: #f8fafc; color: #52657a; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+    td.title { min-width: 190px; font-weight: 700; }
+    td.notes { max-width: 260px; color: #52657a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .actions { display: flex; gap: 5px; }
+    .status { min-height: 1.4em; margin: 0; color: #52657a; }
+    .status.error { color: #b42318; }
+    dialog { width: min(720px, calc(100% - 28px)); border: 0; border-radius: 14px; padding: 0; box-shadow: 0 24px 75px rgba(15, 23, 42, .28); }
+    dialog::backdrop { background: rgba(15, 23, 42, .42); }
+    form { padding: 24px; }
+    .form-head, .form-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .form-head { margin-bottom: 18px; }
+    .form-head h2 { margin: 0; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .form-grid .wide { grid-column: 1 / -1; }
+    label { display: grid; gap: 6px; color: #41536a; font-size: .88rem; font-weight: 700; }
+    .form-actions { margin-top: 22px; justify-content: flex-end; }
+    @media (max-width: 620px) { main { padding: 20px 12px 40px; } .endpoint { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div><h1>Itinerary admin</h1><p class="subtitle">Manage the item list stored in Google Sheets.</p></div>
+      <a href="index.html">View itinerary</a>
+    </header>
+
+    <section class="endpoint" aria-label="Admin API connection">
+      <input id="api-url" type="url" placeholder="Paste the deployed Google Apps Script admin URL">
+      <button id="save-api" class="secondary" type="button">Save URL</button>
+      <button id="load-items" type="button">Load items</button>
+    </section>
+
+    <div class="toolbar">
+      <p id="status" class="status" aria-live="polite">Add the admin API URL to begin.</p>
+      <button id="new-item" type="button" disabled>New item</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Day</th><th>Order</th><th>Type</th><th>Title</th><th>Start</th><th>End</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody id="item-list"><tr><td colspan="8" class="hint">No items loaded.</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="toolbar" style="margin-top: 32px;"><div><h2 style="margin:0;">Days</h2><p class="hint" style="margin:4px 0 0;">Edit the date or add a note shown in Summary view.</p></div></div>
+    <div class="table-wrap">
+      <table style="min-width: 650px;">
+        <thead><tr><th>Date</th><th>Day note</th><th>Actions</th></tr></thead>
+        <tbody id="day-list"><tr><td colspan="3" class="hint">No days loaded.</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+
+  <dialog id="item-dialog">
+    <form id="item-form" method="dialog">
+      <div class="form-head"><h2 id="dialog-title">New item</h2><button id="close-dialog" class="secondary" type="button">Close</button></div>
+      <div class="form-grid">
+        <label>Day <select id="item-day" required></select></label>
+        <label>Order <input id="item-order" type="number" min="1" required></label>
+        <label>Type <select id="item-type" required><option>Activity</option><option>Travel</option><option>Drive</option><option>Hotel</option><option>Food</option></select></label>
+        <label class="wide">Title <input id="item-title" required></label>
+        <label>Start <input id="item-start" type="time"></label>
+        <label>End <input id="item-end" type="time"></label>
+        <label class="wide">Notes <textarea id="item-notes"></textarea></label>
+        <label>From <input id="item-from"></label>
+        <label>To <input id="item-to"></label>
+        <label>Travel mode <select id="item-travel-mode"><option value="">Auto</option><option value="driving">Driving</option><option value="transit">Transit</option><option value="walking">Walking</option><option value="bicycling">Bicycling</option></select></label>
+        <label>Link <input id="item-link" type="url"></label>
+        <label class="wide">Map URL <input id="item-map-url" type="url"></label>
+        <label class="wide">Directions URL <input id="item-direction-url" type="url"></label>
+      </div>
+      <div class="form-actions"><button id="cancel-item" class="secondary" type="button">Cancel</button><button type="submit">Save item</button></div>
+    </form>
+  </dialog>
+  <dialog id="day-dialog">
+    <form id="day-form" method="dialog">
+      <div class="form-head"><h2>Edit day</h2><button id="close-day-dialog" class="secondary" type="button">Close</button></div>
+      <div class="form-grid">
+        <label class="wide">Date <input id="day-date" required></label>
+        <label class="wide">Day note <textarea id="day-notes" placeholder="Optional context for this day"></textarea></label>
+      </div>
+      <div class="form-actions"><button id="cancel-day" class="secondary" type="button">Cancel</button><button type="submit">Save day</button></div>
+    </form>
+  </dialog>
+  <script src="admin.js?v=20260723.2"></script>
+</body>
+</html>

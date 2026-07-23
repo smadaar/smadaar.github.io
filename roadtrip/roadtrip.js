@@ -443,9 +443,11 @@ function renderPlanner(data) {
     );
 
     const filterStorageKey = () =>
-        planner.classList.contains("calendar-view")
-            ? "roadtripCalendarFilters"
-            : "roadtripListFilters";
+        planner.classList.contains("summary-view")
+            ? "roadtripSummaryFilters"
+            : (planner.classList.contains("calendar-view")
+                ? "roadtripCalendarFilters"
+                : "roadtripListFilters");
 
     function saveFilterState() {
         try {
@@ -495,6 +497,7 @@ function renderPlanner(data) {
         planner.innerHTML = "";
 
         const calendarMode = planner.classList.contains("calendar-view");
+        const summaryMode = planner.classList.contains("summary-view");
 
         const selected = checkboxes
             .filter(cb => cb.checked)
@@ -538,6 +541,85 @@ function renderPlanner(data) {
 
             if (!visibleItems.length && !calendarMode)
                 return;
+
+            if (summaryMode) {
+                const daySummary = createElement("article", {
+                    className: "summary-day"
+                });
+                daySummary.appendChild(createElement("h2", {
+                    className: "summary-day-label",
+                    text: formatDayLabel(day.date)
+                }));
+                if (day.notes) {
+                    daySummary.appendChild(createElement("p", {
+                        className: "summary-day-notes",
+                        text: day.notes
+                    }));
+                }
+
+                const timeline = createElement("ol", {
+                    className: "summary-timeline"
+                });
+                const typeIcons = {
+                    Activity: "",
+                    Travel: "➜",
+                    Drive: "➜",
+                    Hotel: "⌂",
+                    Food: ""
+                };
+
+                visibleItems.forEach(item => {
+                    const row = createElement("li", { className: "summary-item" });
+                    const start = minutesFromTime(item.start);
+                    row.appendChild(createElement("div", {
+                        className: "summary-time",
+                        text: Number.isFinite(start) ? formatTimeHHMM(start) : "TBD"
+                    }));
+
+                    const marker = createElement("div", { className: "summary-marker" });
+                    marker.appendChild(createElement("span", {
+                        className: "summary-icon",
+                        text: typeIcons[item.type] ?? "",
+                        attrs: { "aria-label": item.type || "Itinerary item" }
+                    }));
+                    row.appendChild(marker);
+
+                    const content = createElement("div", { className: "summary-content" });
+                    const linkUrl = getLinkUrl(item);
+                    const title = createElement(linkUrl ? "a" : "span", {
+                        className: "summary-title",
+                        text: item.title || "Untitled item"
+                    });
+                    if (linkUrl) {
+                        title.setAttribute("href", linkUrl);
+                        title.setAttribute("target", "_blank");
+                        title.setAttribute("rel", "noopener noreferrer");
+                    }
+                    content.appendChild(title);
+
+                    if (item.notes) {
+                        content.appendChild(createElement("p", {
+                            className: "summary-notes",
+                            text: item.notes
+                        }));
+                    }
+
+                    const end = minutesFromTime(item.end);
+                    if (Number.isFinite(end)) {
+                        content.appendChild(createElement("p", {
+                            className: "summary-end",
+                            text: `Ends ${formatTimeHHMM(end)}`
+                        }));
+                    }
+
+                    row.appendChild(content);
+                    timeline.appendChild(row);
+                });
+
+                daySummary.appendChild(timeline);
+                planner.appendChild(daySummary);
+                return;
+            }
 
             const dayCard = createElement("article", {
                 className: "day-card"
@@ -895,6 +977,7 @@ function setupCompactMode() {
 function setupCalendarMode() {
     const planner = document.getElementById("planner");
     const button = document.getElementById("calendar-mode-btn");
+    const summaryButton = document.getElementById("summary-mode-btn");
 
     if (!planner || !button) return;
 
@@ -902,6 +985,14 @@ function setupCalendarMode() {
 
     function applyCalendarMode(enabled) {
         planner.classList.toggle("calendar-view", enabled);
+        if (enabled) {
+            planner.classList.remove("summary-view");
+            localStorage.setItem("roadtripSummaryMode", "false");
+            if (summaryButton) {
+                summaryButton.textContent = "Summary view";
+                summaryButton.setAttribute("aria-pressed", "false");
+            }
+        }
         button.textContent = enabled ? "List view" : "Calendar view";
         button.setAttribute("aria-pressed", String(enabled));
         planner.dispatchEvent(new Event("roadtrip-view-changed"));
@@ -916,9 +1007,43 @@ function setupCalendarMode() {
     });
 }
 
+function setupSummaryMode() {
+    const planner = document.getElementById("planner");
+    const button = document.getElementById("summary-mode-btn");
+    const calendarButton = document.getElementById("calendar-mode-btn");
+
+    if (!planner || !button) return;
+
+    const isSummary = localStorage.getItem("roadtripSummaryMode") === "true";
+
+    function applySummaryMode(enabled) {
+        planner.classList.toggle("summary-view", enabled);
+        if (enabled) {
+            planner.classList.remove("calendar-view");
+            localStorage.setItem("roadtripCalendarMode", "false");
+            if (calendarButton) {
+                calendarButton.textContent = "Calendar view";
+                calendarButton.setAttribute("aria-pressed", "false");
+            }
+        }
+        button.textContent = enabled ? "List view" : "Summary view";
+        button.setAttribute("aria-pressed", String(enabled));
+        planner.dispatchEvent(new Event("roadtrip-view-changed"));
+    }
+
+    applySummaryMode(isSummary);
+
+    button.addEventListener("click", () => {
+        const enabled = !planner.classList.contains("summary-view");
+        localStorage.setItem("roadtripSummaryMode", String(enabled));
+        applySummaryMode(enabled);
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     setupFilterModal();
     setupCompactMode();
     setupCalendarMode();
+    setupSummaryMode();
     initialisePlanner();
 });

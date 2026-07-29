@@ -101,7 +101,7 @@ function openEditor(item = {}) {
   document.getElementById("dialog-title").textContent = editingId ? "Edit item" : "New item";
   ["day", "order", "type", "title", "start", "end", "notes", "from", "to", "travelMode", "link", "mapUrl", "directionUrl"].forEach(key => {
     const input = document.getElementById(`item-${key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)}`);
-    if (input) input.value = key === "start" || key === "end" ? formatTime(item[key]) : (item[key] || "");
+    if (input) input.value = key === "start" || key === "end" ? formatTime(item[key]) : (item[key] ?? "");
   });
   dialog.showModal();
 }

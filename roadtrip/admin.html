@@ -76,7 +76,7 @@
       <div class="form-head"><h2 id="dialog-title">New item</h2><button id="close-dialog" class="secondary" type="button">Close</button></div>
       <div class="form-grid">
         <label>Day <input id="item-day" type="date" required></label>
-        <label>Order <input id="item-order" type="number" min="1" required></label>
+        <label>Order <input id="item-order" type="number" min="0" required></label>
         <label>Type <select id="item-type" required><option>Activity</option><option>Travel</option><option>Drive</option><option>Hotel</option><option>Food</option><option>Summary</option></select></label>
         <label class="wide">Title <input id="item-title"></label>
         <label>Start <input id="item-start" type="time"></label>
@@ -92,6 +92,6 @@
       <div class="form-actions"><button id="cancel-item" class="secondary" type="button">Cancel</button><button type="submit">Save item</button></div>
     </form>
   </dialog>
-  <script src="admin.js?v=20260729.1"></script>
+  <script src="admin.js?v=20260729.2"></script>
 </body>
 </html>

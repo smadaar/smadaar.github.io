@@ -83,7 +83,7 @@ function readAdminData() {
   const items = itemTable();
   const resultItems = items.rows.filter(row => row[items.index.id] !== "").map(row => {
     const value = objectFromRow(row, items);
-    const item = Object.fromEntries(["id", ...ITEM_FIELDS].map(field => [field, value[field] || ""]));
+    const item = Object.fromEntries(["id", ...ITEM_FIELDS].map(field => [field, value[field] ?? ""]));
     item.day = dateKey(value.day);
     return item;
   });
@@ -136,7 +136,7 @@ function createItem(params) {
   validateItem(params);
   const data = itemTable();
   const requestedOrder = Number(params.order);
-  const order = Number.isFinite(requestedOrder) && requestedOrder > 0 ? requestedOrder : nextOrder(data, params.day);
+  const order = Number.isFinite(requestedOrder) && requestedOrder >= 0 ? requestedOrder : nextOrder(data, params.day);
   if (order < nextOrder(data, params.day)) shiftOrdersFrom(data, params.day, order);
   const row = data.headers.map(header => {
     if (header === "id") return Utilities.getUuid();

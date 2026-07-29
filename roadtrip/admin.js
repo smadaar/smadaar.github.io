@@ -33,11 +33,40 @@ async function jsonFrom(response) {
 
 async function callApi(action, values = {}) {
   if (!apiUrl()) throw new Error("Add the deployed admin API URL first.");
-  const body = new URLSearchParams({ action, ...values });
-  // Apps Script Web Apps do not reliably return CORS headers for POST requests
-  // from GitHub Pages. This still sends the form-encoded mutation; the caller
-  // immediately reloads the CORS-readable list endpoint to show the result.
-  await fetch(apiUrl(), { method: "POST", body, mode: "no-cors" });
+  // Submit a native form instead of a no-CORS fetch. Apps Script web-app
+  // redirects can otherwise make a browser report a successful request before
+  // the mutation has completed.
+  await new Promise((resolve, reject) => {
+    const target = document.getElementById("admin-save-target");
+    const postForm = document.createElement("form");
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("The save request timed out. Check the deployed admin API URL."));
+    }, 30000);
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      target.removeEventListener("load", complete);
+      postForm.remove();
+    };
+    const complete = () => {
+      cleanup();
+      resolve();
+    };
+
+    postForm.method = "POST";
+    postForm.action = apiUrl();
+    postForm.target = target.name;
+    postForm.hidden = true;
+    Object.entries({ action, ...values }).forEach(([name, value]) => {
+      const input = document.createElement("input");
+      input.name = name;
+      input.value = value;
+      postForm.appendChild(input);
+    });
+    target.addEventListener("load", complete, { once: true });
+    document.body.appendChild(postForm);
+    postForm.submit();
+  });
 }
 
 async function loadItems() {
@@ -101,7 +130,12 @@ function openEditor(item = {}) {
   document.getElementById("dialog-title").textContent = editingId ? "Edit item" : "New item";
   ["day", "order", "type", "title", "start", "end", "notes", "from", "to", "travelMode", "link", "mapUrl", "directionUrl"].forEach(key => {
     const input = document.getElementById(`item-${key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)}`);
-    if (input) input.value = key === "start" || key === "end" ? formatTime(item[key]) : (item[key] ?? "");
+    if (input) {
+      const value = item[key];
+      input.value = key === "start" || key === "end"
+        ? formatTime(value)
+        : (value === undefined || value === null ? "" : String(value));
+    }
   });
   dialog.showModal();
 }

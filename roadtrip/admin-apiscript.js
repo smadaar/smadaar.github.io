@@ -33,7 +33,9 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  const lock = LockService.getDocumentLock();
+  // This is deployed as a standalone web app, where a document lock may not
+  // exist. A script lock safely serializes edits for either deployment type.
+  const lock = LockService.getScriptLock();
   try {
     lock.waitLock(30000);
     const params = e.parameter || {};
@@ -47,7 +49,7 @@ function doPost(e) {
   } catch (error) {
     return jsonResponse({ ok: false, error: error.message });
   } finally {
-    if (lock.hasLock()) lock.releaseLock();
+    if (lock && lock.hasLock()) lock.releaseLock();
   }
 }
 
@@ -73,6 +75,10 @@ function objectFromRow(row, tableData) {
   return Object.fromEntries(tableData.headers.map((header, index) => [header, row[index] === undefined ? "" : row[index]]));
 }
 
+function cellValue(value) {
+  return value === undefined || value === null ? "" : value;
+}
+
 function dateKey(value) {
   if (value instanceof Date) return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
   const match = String(value || "").match(/^\d{4}-\d{2}-\d{2}/);
@@ -83,7 +89,7 @@ function readAdminData() {
   const items = itemTable();
   const resultItems = items.rows.filter(row => row[items.index.id] !== "").map(row => {
     const value = objectFromRow(row, items);
-    const item = Object.fromEntries(["id", ...ITEM_FIELDS].map(field => [field, value[field] ?? ""]));
+    const item = Object.fromEntries(["id", ...ITEM_FIELDS].map(field => [field, cellValue(value[field])]));
     item.day = dateKey(value.day);
     return item;
   });
@@ -165,11 +171,12 @@ function updateItem(params) {
   validateItem(params);
   const data = itemTable();
   const item = findItem(data, params.id);
-  ITEM_FIELDS.filter(field => field !== "order").forEach(field => setValue(data.sheet, item.rowNumber, data.index[field], params[field]));
   const previousDay = item.row[data.index.day];
+  // Include order here so an existing row can be explicitly placed at 0.
+  ITEM_FIELDS.forEach(field => setValue(data.sheet, item.rowNumber, data.index[field], params[field]));
   if (dateKey(previousDay) !== dateKey(params.day)) {
     setValue(data.sheet, item.rowNumber, data.index.order, nextOrder(data, params.day));
-    rebalanceOrders(data, previousDay);
+    rebalanceOrders(itemTable(), previousDay);
   }
 }
 

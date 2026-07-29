@@ -48,7 +48,7 @@
 <body>
   <main>
     <header>
-      <div><h1>Itinerary admin</h1><p class="subtitle">Manage the item list stored in Google Sheets.</p></div>
+      <div><h1>Itinerary admin</h1><p class="subtitle">Manage the single Itinerary sheet. Summary rows provide day notes.</p></div>
       <a href="index.html">View itinerary</a>
     </header>
 
@@ -69,23 +69,16 @@
       </table>
     </div>
 
-    <div class="toolbar" style="margin-top: 32px;"><div><h2 style="margin:0;">Days</h2><p class="hint" style="margin:4px 0 0;">Edit the date or add a note shown in Summary view.</p></div></div>
-    <div class="table-wrap">
-      <table style="min-width: 650px;">
-        <thead><tr><th>Date</th><th>Day note</th><th>Actions</th></tr></thead>
-        <tbody id="day-list"><tr><td colspan="3" class="hint">No days loaded.</td></tr></tbody>
-      </table>
-    </div>
   </main>
 
   <dialog id="item-dialog">
     <form id="item-form" method="dialog">
       <div class="form-head"><h2 id="dialog-title">New item</h2><button id="close-dialog" class="secondary" type="button">Close</button></div>
       <div class="form-grid">
-        <label>Day <select id="item-day" required></select></label>
+        <label>Day <input id="item-day" type="date" required></label>
         <label>Order <input id="item-order" type="number" min="1" required></label>
-        <label>Type <select id="item-type" required><option>Activity</option><option>Travel</option><option>Drive</option><option>Hotel</option><option>Food</option></select></label>
-        <label class="wide">Title <input id="item-title" required></label>
+        <label>Type <select id="item-type" required><option>Activity</option><option>Travel</option><option>Drive</option><option>Hotel</option><option>Food</option><option>Summary</option></select></label>
+        <label class="wide">Title <input id="item-title"></label>
         <label>Start <input id="item-start" type="time"></label>
         <label>End <input id="item-end" type="time"></label>
         <label class="wide">Notes <textarea id="item-notes"></textarea></label>
@@ -99,16 +92,6 @@
       <div class="form-actions"><button id="cancel-item" class="secondary" type="button">Cancel</button><button type="submit">Save item</button></div>
     </form>
   </dialog>
-  <dialog id="day-dialog">
-    <form id="day-form" method="dialog">
-      <div class="form-head"><h2>Edit day</h2><button id="close-day-dialog" class="secondary" type="button">Close</button></div>
-      <div class="form-grid">
-        <label class="wide">Date <input id="day-date" required></label>
-        <label class="wide">Day note <textarea id="day-notes" placeholder="Optional context for this day"></textarea></label>
-      </div>
-      <div class="form-actions"><button id="cancel-day" class="secondary" type="button">Cancel</button><button type="submit">Save day</button></div>
-    </form>
-  </dialog>
-  <script src="admin.js?v=20260723.5"></script>
+  <script src="admin.js?v=20260729.1"></script>
 </body>
 </html>

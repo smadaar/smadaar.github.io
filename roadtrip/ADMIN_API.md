@@ -1,27 +1,30 @@
 # Road trip admin API
 
-`admin.html` is a separate editor for the `Itinerary` item sheet. It requires its own Google Apps Script Web App deployment because the existing public `doGet` API deliberately exposes only the grouped display data.
+`admin.html` is an editor for the single `Itinerary` sheet. It requires its
+own Google Apps Script Web App deployment because the public endpoint exposes
+only grouped display data.
 
 ## Sheet columns
 
-The admin script expects these headers (case-sensitive):
+The admin script requires these case-sensitive headers in `Itinerary`:
 
-- `Itinerary DAYS`: `id`, `date`, and optionally `notes` or `Day Notes`.
-- `Itinerary`: `id`, `day`, `order`, `type`, `title`, plus optional `start`, `end`, `notes`, `from`, `to`, `travelMode`, `mapUrl`, `directionUrl`, and `link`.
+- `id`, `day`, `order`, `type`, and `title`.
+- Optional item headers: `start`, `end`, `notes`, `from`, `to`, `travelMode`,
+  `mapUrl`, `directionUrl`, and `link`.
 
-The admin script automatically adds an `id` column to `Itinerary` when it is first used and fills every existing item row with a UUID. New items receive one automatically too.
+`day` must contain the date for the row. Use a `Summary` type row to provide a
+day note: its `notes` value (or its `title` when notes is blank) appears above
+that day in the itinerary. The admin script adds and fills an `id` column when
+it is first used.
 
 ## Deploy
 
 1. Create a standalone Apps Script project attached to the same spreadsheet.
-2. Copy in [admin-apiscript.js](admin-apiscript.js). If the project is standalone rather than sheet-bound, paste the spreadsheet ID (the portion between `/d/` and `/edit` in its URL) into `ADMIN_SPREADSHEET_ID` at the top of the script.
+2. Copy in [admin-apiscript.js](admin-apiscript.js) and set
+   `ADMIN_SPREADSHEET_ID` if needed.
 3. Deploy it as a Web App and copy the `/exec` URL.
-4. Open `admin.html`, paste that URL into the connection field, save it, then load items.
+4. Open `admin.html`, paste that URL into the connection field, save it, then
+   load items.
 
-The page sends form-encoded POST requests for create, update, delete, and move actions, and GET requests with `?action=list` to load the data.
-
-## Deployment access and security
-
-Because `admin.html` is a static page on a different origin, its browser requests cannot use your Google sign-in session. For this direct setup, deploy the Web App to **execute as you** with **Who has access: Anyone** (or the equivalent external-access option in your Workspace). A restricted deployment sends Google’s HTML sign-in page to the admin portal instead of JSON.
-
-That makes the Web App URL a credential: keep `admin.html` private, do not link it from the public itinerary, and rotate/redeploy the URL if it is exposed. For account-based access control, host the admin UI inside Apps Script or put an authenticated server-side proxy in front of the API instead.
+The page sends form-encoded POST requests for create, update, delete, and move
+actions, and GET requests with `?action=list` to load data.

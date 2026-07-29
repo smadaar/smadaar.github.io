@@ -5,13 +5,9 @@ const list = document.getElementById("item-list");
 const status = document.getElementById("status");
 const dialog = document.getElementById("item-dialog");
 const form = document.getElementById("item-form");
-const dayList = document.getElementById("day-list");
-const dayDialog = document.getElementById("day-dialog");
-const dayForm = document.getElementById("day-form");
 const DEFAULT_ADMIN_API_URL = "";
 let data = { days: [], items: [] };
 let editingId = null;
-let editingDayId = null;
 let requestedItemId = new URLSearchParams(window.location.search).get("item");
 
 apiUrlInput.value = localStorage.getItem("roadtripAdminApiUrl") || DEFAULT_ADMIN_API_URL;
@@ -53,7 +49,6 @@ async function loadItems() {
     if (!response.ok || !result.ok) throw new Error(result.error || "Unable to load items.");
     data = result;
     render();
-    renderDays();
     newButton.disabled = false;
     if (requestedItemId) {
       const item = data.items.find(value => String(value.id) === requestedItemId);
@@ -70,8 +65,7 @@ function escapeHtml(value) {
 }
 
 function dayLabel(id) {
-  const day = data.days.find(value => String(value.id) === String(id));
-  return day ? formatDay(day.date) : `Day ${id}`;
+  return formatDay(id);
 }
 
 function formatDay(value) {
@@ -95,25 +89,16 @@ function nextOrderForDay(dayId) {
 }
 
 function render() {
-  const items = [...data.items].sort((a, b) => Number(a.day) - Number(b.day) || Number(a.order) - Number(b.order));
+  const items = [...data.items].sort((a, b) => String(a.day).localeCompare(String(b.day)) || Number(a.order) - Number(b.order));
   list.innerHTML = items.length ? items.map(item => `<tr>
     <td>${escapeHtml(dayLabel(item.day))}</td><td class="title">${escapeHtml(item.title)}</td>
     <td><div class="actions"><button class="icon secondary" data-action="up" data-id="${escapeHtml(item.id)}" title="Move up">↑</button><button class="icon secondary" data-action="down" data-id="${escapeHtml(item.id)}" title="Move down">↓</button><button class="icon secondary" data-action="add-below" data-id="${escapeHtml(item.id)}" title="Add an item below">+</button><button class="icon secondary" data-action="edit" data-id="${escapeHtml(item.id)}">Edit</button><button class="icon danger" data-action="delete" data-id="${escapeHtml(item.id)}">Delete</button></div></td>
   </tr>`).join("") : '<tr><td colspan="3" class="hint">No items found.</td></tr>';
 }
 
-function renderDays() {
-  dayList.innerHTML = data.days.length ? data.days.map(day => `<tr>
-    <td>${escapeHtml(formatDay(day.date))}</td><td class="notes" title="${escapeHtml(day.notes)}">${escapeHtml(day.notes)}</td>
-    <td><button class="secondary" data-day-id="${escapeHtml(day.id)}">Edit</button></td>
-  </tr>`).join("") : '<tr><td colspan="3" class="hint">No days found.</td></tr>';
-}
-
 function openEditor(item = {}) {
   editingId = item.id || null;
   document.getElementById("dialog-title").textContent = editingId ? "Edit item" : "New item";
-  const day = document.getElementById("item-day");
-  day.innerHTML = data.days.map(value => `<option value="${escapeHtml(value.id)}">${escapeHtml(formatDay(value.date))}</option>`).join("");
   ["day", "order", "type", "title", "start", "end", "notes", "from", "to", "travelMode", "link", "mapUrl", "directionUrl"].forEach(key => {
     const input = document.getElementById(`item-${key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)}`);
     if (input) input.value = key === "start" || key === "end" ? formatTime(item[key]) : (item[key] || "");
@@ -134,7 +119,7 @@ document.getElementById("save-api").addEventListener("click", () => {
 });
 loadButton.addEventListener("click", loadItems);
 newButton.addEventListener("click", () => {
-  const day = data.days[0]?.id;
+  const day = data.days[0]?.date || new Date().toISOString().slice(0, 10);
   openEditor({ day, order: nextOrderForDay(day), type: "Activity" });
 });
 document.getElementById("close-dialog").addEventListener("click", () => dialog.close());
@@ -159,25 +144,6 @@ list.addEventListener("click", async event => {
   try {
     await callApi(button.dataset.action, { id: item.id });
     await loadItems(); showStatus(button.dataset.action === "delete" ? "Item deleted." : "Item moved.");
-  } catch (error) { showStatus(error.message, true); }
-});
-
-dayList.addEventListener("click", event => {
-  const button = event.target.closest("button[data-day-id]");
-  const day = data.days.find(value => String(value.id) === button?.dataset.dayId);
-  if (!day) return;
-  editingDayId = day.id;
-  document.getElementById("day-date").value = day.date || "";
-  document.getElementById("day-notes").value = day.notes || "";
-  dayDialog.showModal();
-});
-document.getElementById("close-day-dialog").addEventListener("click", () => dayDialog.close());
-document.getElementById("cancel-day").addEventListener("click", () => dayDialog.close());
-dayForm.addEventListener("submit", async event => {
-  event.preventDefault();
-  try {
-    await callApi("updateDay", { id: editingDayId, date: document.getElementById("day-date").value.trim(), notes: document.getElementById("day-notes").value.trim() });
-    dayDialog.close(); await loadItems(); showStatus("Day saved.");
   } catch (error) { showStatus(error.message, true); }
 });
 

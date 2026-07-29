@@ -634,7 +634,7 @@
     }
 
     .planner.compact .item-row {
-      grid-template-columns: 92px minmax(190px, 1fr) minmax(105px, auto);
+      grid-template-columns: 92px minmax(190px, 1fr) minmax(105px, auto) auto;
       gap: 10px;
       padding: 9px 12px;
       border-radius: 12px;
@@ -651,7 +651,9 @@
     }
 
     .planner.compact .item-body p {
-      display: none;
+      display: block;
+      font-size: 0.84rem;
+      line-height: 1.35;
     }
 
     .planner.compact .item-meta {
@@ -1058,6 +1060,6 @@
     </div>
   </main>
 
-  <script src="roadtrip.js?v=20260723.3"></script>
+  <script src="roadtrip.js?v=20260729.1"></script>
 </body>
 </html>

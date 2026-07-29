@@ -537,7 +537,7 @@ function renderPlanner(data) {
 
             });
 
-            if (!visibleItems.length && !calendarMode)
+            if (!visibleItems.length && !calendarMode && !day.notes)
                 return;
 
             if (summaryMode) {

@@ -1,12 +1,12 @@
 /*
  * Deploy this file as a separate Google Apps Script Web App for admin.html.
  * Sheet columns required:
- *   Itinerary DAYS: id, date, notes (or Day Notes)
- *   Itinerary: id, day, order, type, title, start, end, notes, from, to,
+ *   Itinerary: id, day (a date), order, type, title, start, end, notes, from, to,
  *              travelMode, mapUrl, directionUrl, link
+ * A row with type "Summary" provides the day note; it is not shown as an
+ * itinerary item by the public endpoint.
  */
 
-const ADMIN_DAY_SHEET = "Itinerary DAYS";
 const ADMIN_ITEM_SHEET = "Itinerary";
 const ITEM_FIELDS = ["day", "order", "type", "title", "start", "end", "notes", "from", "to", "travelMode", "mapUrl", "directionUrl", "link"];
 // For a standalone Apps Script project, paste the ID from the spreadsheet URL
@@ -40,7 +40,6 @@ function doPost(e) {
     const action = params.action;
     if (action === "create") createItem(params);
     else if (action === "update") updateItem(params);
-    else if (action === "updateDay") updateDay(params);
     else if (action === "delete") deleteItem(params.id);
     else if (action === "up" || action === "down") moveItem(params.id, action);
     else throw new Error("Unknown action.");
@@ -74,19 +73,26 @@ function objectFromRow(row, tableData) {
   return Object.fromEntries(tableData.headers.map((header, index) => [header, row[index] === undefined ? "" : row[index]]));
 }
 
+function dateKey(value) {
+  if (value instanceof Date) return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  const match = String(value || "").match(/^\d{4}-\d{2}-\d{2}/);
+  return match ? match[0] : String(value || "").trim();
+}
+
 function readAdminData() {
-  const days = table(ADMIN_DAY_SHEET);
   const items = itemTable();
-  required(days, ["id", "date"]);
+  const resultItems = items.rows.filter(row => row[items.index.id] !== "").map(row => {
+    const value = objectFromRow(row, items);
+    const item = Object.fromEntries(["id", ...ITEM_FIELDS].map(field => [field, value[field] || ""]));
+    item.day = dateKey(value.day);
+    return item;
+  });
   return {
-    days: days.rows.filter(row => row[days.index.id] !== "").map(row => {
-      const value = objectFromRow(row, days);
-      return { id: value.id, date: value.date, notes: value.notes || value["Day Notes"] || "" };
-    }),
-    items: items.rows.filter(row => row[items.index.id] !== "").map(row => {
-      const value = objectFromRow(row, items);
-      return Object.fromEntries(["id", ...ITEM_FIELDS].map(field => [field, value[field] || ""]));
-    })
+    // Kept for admin.html compatibility: dates are derived from the one sheet.
+    days: [...new Set(resultItems.map(item => item.day).filter(Boolean))]
+      .sort()
+      .map(date => ({ id: date, date })),
+    items: resultItems
   };
 }
 
@@ -117,7 +123,9 @@ function itemTable() {
 }
 
 function validateItem(params) {
-  if (!params.day || !params.type || !params.title) throw new Error("Day, type, and title are required.");
+  if (!params.day || !params.type || (String(params.type).toLowerCase() !== "summary" && !params.title)) {
+    throw new Error("Day and type are required; title is required for non-summary items.");
+  }
 }
 
 function setValue(sheet, rowNumber, index, value) {
@@ -141,22 +149,9 @@ function createItem(params) {
 function shiftOrdersFrom(data, day, fromOrder) {
   data.rows
     .map((row, index) => ({ row, index, order: Number(row[data.index.order]) || 0 }))
-    .filter(value => String(value.row[data.index.day]) === String(day) && value.order >= fromOrder)
+    .filter(value => dateKey(value.row[data.index.day]) === dateKey(day) && value.order >= fromOrder)
     .sort((a, b) => b.order - a.order || b.index - a.index)
     .forEach(value => setValue(data.sheet, value.index + 2, data.index.order, value.order + 1));
-}
-
-function updateDay(params) {
-  if (!params.id || !params.date) throw new Error("Day ID and date are required.");
-  const data = table(ADMIN_DAY_SHEET);
-  required(data, ["id", "date"]);
-  const index = data.rows.findIndex(row => String(row[data.index.id]) === String(params.id));
-  if (index < 0) throw new Error("Day not found.");
-  const rowNumber = index + 2;
-  setValue(data.sheet, rowNumber, data.index.date, params.date);
-  const notesColumn = data.index.notes === undefined ? data.index["Day Notes"] : data.index.notes;
-  if (notesColumn === undefined) throw new Error("Add a notes or Day Notes column to Itinerary DAYS first.");
-  setValue(data.sheet, rowNumber, notesColumn, params.notes);
 }
 
 function findItem(data, id) {
@@ -172,7 +167,7 @@ function updateItem(params) {
   const item = findItem(data, params.id);
   ITEM_FIELDS.filter(field => field !== "order").forEach(field => setValue(data.sheet, item.rowNumber, data.index[field], params[field]));
   const previousDay = item.row[data.index.day];
-  if (String(previousDay) !== String(params.day)) {
+  if (dateKey(previousDay) !== dateKey(params.day)) {
     setValue(data.sheet, item.rowNumber, data.index.order, nextOrder(data, params.day));
     rebalanceOrders(data, previousDay);
   }
@@ -193,7 +188,7 @@ function moveItem(id, direction) {
   const day = current.row[data.index.day];
   const ordered = data.rows
     .map((row, index) => ({ row, index, order: Number(row[data.index.order]) || 0 }))
-    .filter(value => String(value.row[data.index.day]) === String(day))
+    .filter(value => dateKey(value.row[data.index.day]) === dateKey(day))
     .sort((a, b) => a.order - b.order || a.index - b.index);
   const position = ordered.findIndex(value => value.index === current.index);
   const target = ordered[position + (direction === "up" ? -1 : 1)];
@@ -204,14 +199,14 @@ function moveItem(id, direction) {
 }
 
 function nextOrder(data, day) {
-  const orders = data.rows.filter(row => String(row[data.index.day]) === String(day)).map(row => Number(row[data.index.order]) || 0);
+  const orders = data.rows.filter(row => dateKey(row[data.index.day]) === dateKey(day)).map(row => Number(row[data.index.order]) || 0);
   return orders.length ? Math.max(...orders) + 1 : 1;
 }
 
 function rebalanceOrders(data, day) {
   data.rows
     .map((row, index) => ({ row, index, order: Number(row[data.index.order]) || 0 }))
-    .filter(value => String(value.row[data.index.day]) === String(day))
+    .filter(value => dateKey(value.row[data.index.day]) === dateKey(day))
     .sort((a, b) => a.order - b.order || a.index - b.index)
     .forEach((value, index) => setValue(data.sheet, value.index + 2, data.index.order, index + 1));
 }

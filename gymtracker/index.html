@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f3ef">
+  <title>Repwise — Weight log</title>
+  <style>
+    :root{color-scheme:light;--ink:#20231f;--muted:#777c72;--line:#e8e8e1;--paper:#fff;--bg:#f4f3ef;--green:#38644f;--green-light:#eaf2eb;--orange:#ab613d;--orange-light:#faeee7;--shadow:0 12px 32px #272c2010}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45}button,select{font:inherit}button{cursor:pointer}.shell{max-width:760px;margin:0 auto;padding:36px 24px 70px}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:42px}.brand{display:flex;align-items:center;gap:10px;font-weight:750;letter-spacing:-.04em;font-size:18px}.brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--green);color:#fff}.brand-mark svg{width:19px;height:19px}.local-label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.local-label span{width:7px;height:7px;border-radius:50%;background:#72a47f}.intro{margin-bottom:26px}.eyebrow{text-transform:uppercase;color:var(--green);font-size:11px;font-weight:750;letter-spacing:.13em}.intro h1{font-size:34px;line-height:1.1;letter-spacing:-.05em;margin:7px 0 9px}.intro p{color:var(--muted);margin:0}.exercise-picker{display:flex;align-items:center;gap:14px;margin-bottom:20px}.exercise-picker label{font-size:12px;color:var(--muted);font-weight:650}.exercise-select{appearance:none;flex:1;max-width:360px;border:1px solid var(--line);background:var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23777c72' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center;border-radius:10px;padding:11px 40px 11px 14px;font-weight:650;color:var(--ink);outline:none}.exercise-select:focus,select:focus-visible,button:focus-visible{outline:3px solid #adc9b1;outline-offset:2px}.card{background:var(--paper);border:1px solid #e9e9e2;border-radius:16px;box-shadow:var(--shadow)}.entry-card{padding:22px 24px 24px}.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.section-title{font-size:16px;font-weight:720;letter-spacing:-.02em}.section-note{font-size:12px;color:var(--muted)}.form-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.field label{display:block;font-size:12px;font-weight:650;color:#666b63;margin:0 0 7px}.field select{width:100%;appearance:none;background:#fafaf8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23777c72' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;border:1px solid var(--line);border-radius:9px;padding:11px 36px 11px 12px;color:var(--ink);font-weight:600}.add-btn{height:43px;border:0;border-radius:9px;background:var(--green);color:white;font-weight:680;padding:0 18px;white-space:nowrap;transition:background .15s,transform .15s}.add-btn:hover{background:#2e5742;transform:translateY(-1px)}.history-head{display:flex;align-items:end;justify-content:space-between;margin:30px 2px 12px}.history-head h2{font-size:17px;margin:0;letter-spacing:-.03em}.history-head p{font-size:12px;color:var(--muted);margin:3px 0 0}.count{font-size:11px;color:var(--muted);border:1px solid var(--line);padding:4px 9px;border-radius:99px}.history{overflow:hidden}.set-row{display:grid;grid-template-columns:52px 1fr auto;gap:14px;align-items:center;padding:15px 18px;border-bottom:1px solid #f0f0eb}.set-row:last-child{border-bottom:0}.set-number{font-size:11px;font-weight:700;color:#8a8e85;background:#f4f4f0;border-radius:7px;width:35px;height:29px;display:grid;place-items:center}.set-main{display:flex;align-items:baseline;gap:7px}.set-value{font-weight:720;font-size:15px;letter-spacing:-.02em}.set-detail{font-size:12px;color:var(--muted)}.set-date{display:block;color:#94988f;font-size:11px;margin-top:3px}.rating{display:flex;align-items:center;gap:5px}.rate-btn{width:34px;height:32px;display:grid;place-items:center;border:1px solid var(--line);background:#fff;color:#989c94;border-radius:8px;transition:all .15s}.rate-btn:hover{border-color:#bcc9bd;color:var(--green)}.rate-btn svg{width:16px;height:16px}.rate-btn.active.easy{color:var(--green);background:var(--green-light);border-color:#d4e5d6}.rate-btn.active.hard{color:var(--orange);background:var(--orange-light);border-color:#f0d8ca}.empty{padding:38px 20px;text-align:center;color:var(--muted);font-size:13px}.empty-icon{width:40px;height:40px;border-radius:13px;background:#f3f4ef;color:var(--green);display:grid;place-items:center;margin:0 auto 12px}.empty-icon svg{width:20px;height:20px}.timer-card{margin-top:18px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;background:#253d33;color:white;border-radius:14px;box-shadow:0 8px 24px #233b3022}.timer-label{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#d9e3da}.timer-dot{width:8px;height:8px;border-radius:50%;background:#a7d2a9;box-shadow:0 0 0 4px #ffffff16;animation:pulse 1.8s infinite}.timer-value{font-variant-numeric:tabular-nums;font-size:24px;letter-spacing:.04em;font-weight:680}.timer-reset{border:1px solid #ffffff35;color:#e4ece5;background:transparent;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600}.timer-reset:hover{background:#ffffff12}@keyframes pulse{50%{box-shadow:0 0 0 7px #ffffff08;opacity:.7}}.footer{margin:28px 0 0;text-align:center;color:#9a9d95;font-size:11px}.hidden{display:none!important}
+    .timer-inline{display:flex;align-items:center;gap:9px;white-space:nowrap;min-width:120px}.timer-inline .timer-dot{background:#72a47f;box-shadow:0 0 0 4px #72a47f1c}.timer-inline .timer-value{font-size:17px;color:var(--ink)}.today-count{font-size:12px;color:var(--muted);border-left:1px solid var(--line);padding-left:9px}.timer-inline .timer-reset{border-color:var(--line);color:#666b63;background:#fff;padding:6px 9px}.timer-inline .timer-reset:hover{background:#f4f4f0}
+    .day-divider{width:100%;display:flex;justify-content:space-between;align-items:center;padding:10px 18px;background:#f8f8f5;border:0;border-bottom:1px solid var(--line);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left}.day-divider:hover{background:#f1f2ed}.day-chevron{font-size:16px;line-height:10px;transition:transform .15s}.day-divider.collapsed .day-chevron{transform:rotate(-90deg)}.set-row[hidden]{display:none}.set-controls{display:flex;gap:5px;margin-left:8px}.set-action{border:1px solid var(--line);background:#fff;color:#757a71;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:650}.set-action:hover{color:var(--green);border-color:#bcc9bd}.set-action.delete:hover{color:#a34337;border-color:#e6c7c2}.summary-heading{margin-top:34px}.summary-card{overflow:hidden}.summary-row{display:grid;grid-template-columns:1.2fr .8fr 1fr;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid #f0f0eb;font-size:13px}.summary-row:last-child{border-bottom:0}.summary-header{background:#f8f8f5;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}.summary-exercise{font-weight:650}.summary-row time{color:var(--muted);font-size:12px}.summary-empty{padding:20px;color:var(--muted);font-size:13px;text-align:center}
+    @media(max-width:540px){.shell{padding:24px 16px 44px}.topbar{margin-bottom:34px}.exercise-picker{display:block}.exercise-picker label{display:block;margin-bottom:7px}.exercise-select{width:100%;max-width:none}.entry-card{padding:18px 16px}.form-grid{grid-template-columns:1fr 1fr}.add-btn{grid-column:1/-1;width:100%}.timer-inline{grid-column:1/-1;justify-content:center;padding-top:4px}.set-row{grid-template-columns:39px 1fr auto;gap:8px;padding:14px 12px}.set-main{display:block}.set-detail{display:block}.set-controls{margin-left:4px;flex-direction:column}.set-action{padding:4px 6px}.summary-row{grid-template-columns:1fr auto;gap:4px 10px;padding:11px 13px}.summary-header{display:none}.summary-row time{grid-column:1/-1;font-size:11px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 7v10M3.5 9v6M18 7v10m2.5-8v6M6 12h12"/></svg></span>repwise</div>
+      <div class="local-label"><span></span>Saved on this device</div>
+    </header>
+
+    <div class="exercise-picker">
+      <label for="exercise-select">EXERCISE</label>
+      <select id="exercise-select" class="exercise-select" aria-label="Choose exercise"></select>
+    </div>
+
+    <section class="card entry-card" aria-labelledby="entry-title">
+      <form id="set-form" class="form-grid">
+        <div class="field"><label for="weight-select">WEIGHT</label><select id="weight-select" required></select></div>
+        <div class="field"><label for="reps-select">REPS</label><select id="reps-select" required></select></div>
+        <button class="add-btn" type="submit">＋ &nbsp;Add set</button>
+        <div class="timer-inline hidden" id="timer-card" aria-live="polite"><span class="timer-dot"></span><span class="timer-value" id="timer-value">00:00</span><span class="today-count" id="today-count">0 today</span><button type="button" class="timer-reset" id="timer-reset">Reset</button></div>
+      </form>
+    </section>
+
+    <div class="history-head"><div><h2>Recent sets</h2></div><span class="count" id="set-count">0 sets</span></div>
+    <section class="card history" id="history" aria-live="polite"></section>
+
+    <div class="history-head summary-heading"><div><h2>Latest activity</h2></div><span class="count">Last 10</span></div>
+    <section class="card summary-card" id="recent-summary"></section>
+
+    <p class="footer">Your log stays private and is stored in this browser.</p>
+  </main>
+  <script>
+    // Stable IDs keep history attached to an exercise if its display name changes.
+    const EXERCISES = [
+      { id: "bench-press", name: "Bench press" },
+      { id: "incline-bench-press", name: "Incline Bench Press" },
+      { id: "dumb-bell-press", name: "Dumb bell press" },
+      { id: "incline-dumb-bell-press", name: "Incline dumb bell press" },
+      { id: "seated-hammer-curl", name: "Seated hammer curl" },
+      { id: "reverse-bench-press", name: "Reverse bench press" },
+      { id: "narrow-bench-press", name: "Narrow bench press" }
+    ];
+    const STORAGE_KEY = "repwise-log-v1";
+    const exerciseSelect = document.getElementById("exercise-select");
+    const weightSelect = document.getElementById("weight-select");
+    const repsSelect = document.getElementById("reps-select");
+    const historyEl = document.getElementById("history");
+    const countEl = document.getElementById("set-count");
+    const timerCard = document.getElementById("timer-card");
+    const timerValue = document.getElementById("timer-value");
+    let data = loadData();
+    let timerStartedAt = null;
+    let timerInterval = null;
+
+    function loadData() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored === null) {
+          const sample = createSampleData();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(sample));
+          return sample;
+        }
+        const parsed = JSON.parse(stored);
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+        if (!Object.values(parsed).some(sets => Array.isArray(sets) && sets.length)) {
+          const sample = createSampleData();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(sample));
+          return sample;
+        }
+        return parsed;
+      } catch { return {}; }
+    }
+    function createSampleData() {
+      const samples = {
+        "bench-press": [[40,10],[45,8],[45,8],[50,6],[50,6],[52.5,5],[45,9],[47.5,8]],
+        "incline-bench-press": [[30,10],[32.5,8],[35,7],[35,6],[32.5,8]],
+        "dumb-bell-press": [[12,12],[14,10],[14,9],[16,8]],
+        "incline-dumb-bell-press": [[10,12],[12,10],[12,9]],
+        "seated-hammer-curl": [[8,12],[10,10],[10,9],[10,8]],
+        "reverse-bench-press": [[25,10],[30,8],[30,8]],
+        "narrow-bench-press": [[35,10],[40,8],[40,7]]
+      };
+      const demo = {};
+      Object.entries(samples).forEach(([exerciseId, values], exerciseIndex) => {
+        demo[exerciseId] = values.map(([weight, reps], index) => {
+          const daysAgo = Math.floor(index / 2);
+          const date = new Date();
+          date.setDate(date.getDate() - daysAgo);
+          date.setHours(17 + (index % 2), (exerciseIndex * 7 + index * 11) % 60, 0, 0);
+          return {
+            id: `demo-${exerciseId}-${index}`,
+            weight,
+            reps,
+            createdAt: date.toISOString(),
+            rating: index % 3 === 0 ? "easy" : index % 3 === 1 ? "hard" : null
+          };
+        });
+      });
+      return demo;
+    }
+    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    function fillSelect(select, values, label) {
+      select.innerHTML = values.map(v => `<option value="${v}">${v} ${label}</option>`).join("");
+    }
+    function init() {
+      exerciseSelect.innerHTML = EXERCISES.map(ex => `<option value="${ex.id}">${ex.name}</option>`).join("");
+      fillSelect(weightSelect, Array.from({length: 58}, (_, i) => i < 50 ? i + 1 : 50 + (i - 49) * 5), "kg");
+      fillSelect(repsSelect, Array.from({length: 20}, (_, i) => i + 1), "reps");
+      weightSelect.value = "20";
+      repsSelect.value = "8";
+      exerciseSelect.addEventListener("change", () => { applyLastSetDefaults(); render(); });
+      document.getElementById("set-form").addEventListener("submit", addSet);
+      document.getElementById("timer-reset").addEventListener("click", resetTimer);
+      applyLastSetDefaults();
+      render();
+    }
+    function applyLastSetDefaults() {
+      const sets = Array.isArray(data[exerciseSelect.value]) ? data[exerciseSelect.value] : [];
+      const lastSet = sets[0];
+      if (!lastSet) return;
+      if ([...weightSelect.options].some(option => Number(option.value) === Number(lastSet.weight))) weightSelect.value = String(lastSet.weight);
+      if ([...repsSelect.options].some(option => Number(option.value) === Number(lastSet.reps))) repsSelect.value = String(lastSet.reps);
+    }
+    function addSet(event) {
+      event.preventDefault();
+      const id = exerciseSelect.value;
+      const sets = Array.isArray(data[id]) ? data[id] : (data[id] = []);
+      sets.unshift({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), weight: Number(weightSelect.value), reps: Number(repsSelect.value), createdAt: new Date().toISOString(), rating: null });
+      saveData();
+      startTimer();
+      render();
+    }
+    function formatDate(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "Just now";
+      const now = new Date();
+      const sameDay = date.toDateString() === now.toDateString();
+      const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+      if (sameDay) return "Today · " + date.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+      if (date.toDateString() === yesterday.toDateString()) return "Yesterday · " + date.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+      return date.toLocaleDateString([], {day:"numeric", month:"short"}) + " · " + date.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    }
+    function thumb(kind) {
+      const down = kind === "down";
+      return `<svg viewBox="0 0 24 24" fill="${down ? "none" : "none"}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${down ? "M7 10v10H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h3Zm0 0 4-7a3 3 0 0 1 2 3v4h5.2a2 2 0 0 1 1.97 2.34l-1.1 7A2 2 0 0 1 17.1 21H9a2 2 0 0 1-2-2v-9Z" : "M7 14V4H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h3Zm0 0 4 7a3 3 0 0 0 2-3v-4h5.2a2 2 0 0 0 1.97-2.34l-1.1-7A2 2 0 0 0 17.1 3H9a2 2 0 0 0-2 2v9Z"}"/></svg>`;
+    }
+    function render() {
+      const sets = Array.isArray(data[exerciseSelect.value]) ? data[exerciseSelect.value] : [];
+      countEl.textContent = `${sets.length} ${sets.length === 1 ? "set" : "sets"}`;
+      renderSummary();
+      if (!sets.length) {
+        historyEl.innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 7v10M3.5 9v6M18 7v10m2.5-8v6M6 12h12"/></svg></div>No sets logged for this exercise yet.<br>Your first set is a good place to start.</div>`;
+        return;
+      }
+      let priorDay = "";
+      let groupIndex = -1;
+      const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+      historyEl.innerHTML = sets.map((set, index) => {
+        const date = new Date(set.createdAt);
+        const dayKey = Number.isNaN(date.getTime()) ? "unknown" : date.toDateString();
+        const startsNewGroup = dayKey !== priorDay;
+        if (startsNewGroup) groupIndex++;
+        const isOlder = Number.isNaN(date.getTime()) || date < new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+        const divider = startsNewGroup ? `<button type="button" class="day-divider ${isOlder ? "collapsed" : ""}" data-group="${groupIndex}" aria-expanded="${!isOlder}"><span>${dayLabel(date)}</span><span class="day-chevron" aria-hidden="true">⌄</span></button>` : "";
+        priorDay = dayKey;
+        return `${divider}<article class="set-row ${isOlder ? "older-set" : ""}" data-group="${groupIndex}" ${isOlder ? "hidden" : ""}>
+          <div class="set-number">${String(sets.length - index).padStart(2,"0")}</div>
+          <div><div class="set-main"><span class="set-value">${escapeHTML(set.weight)} kg × ${escapeHTML(set.reps)}</span><span class="set-detail">reps</span></div><time class="set-date">${escapeHTML(Number.isNaN(date.getTime()) ? "Unknown time" : date.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}))}</time></div>
+          <div style="display:flex;align-items:center"><div class="rating" role="group" aria-label="How did this set feel?"><button type="button" class="rate-btn ${set.rating === "easy" ? "active easy" : ""}" aria-label="Mark set easy" aria-pressed="${set.rating === "easy"}" data-id="${escapeHTML(set.id)}" data-rating="easy">${thumb("up")}</button><button type="button" class="rate-btn ${set.rating === "hard" ? "active hard" : ""}" aria-label="Mark set hard" aria-pressed="${set.rating === "hard"}" data-id="${escapeHTML(set.id)}" data-rating="hard">${thumb("down")}</button></div><div class="set-controls"><button type="button" class="set-action edit" data-id="${escapeHTML(set.id)}">Edit</button><button type="button" class="set-action delete" data-id="${escapeHTML(set.id)}">Remove</button></div></div>
+        </article>`;
+      }).join("");
+      historyEl.querySelectorAll(".rate-btn").forEach(button => button.addEventListener("click", rateSet));
+      historyEl.querySelectorAll(".set-action.edit").forEach(button => button.addEventListener("click", editSet));
+      historyEl.querySelectorAll(".set-action.delete").forEach(button => button.addEventListener("click", removeSet));
+      historyEl.querySelectorAll(".day-divider").forEach(button => button.addEventListener("click", toggleDay));
+    }
+    function renderSummary() {
+      const recent = Object.entries(data).flatMap(([exerciseId, sets]) => {
+        if (!Array.isArray(sets)) return [];
+        const exercise = EXERCISES.find(item => item.id === exerciseId);
+        const latest = sets.filter(set => !Number.isNaN(new Date(set.createdAt).getTime()))
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+        if (!latest) return [];
+        const latestDate = new Date(latest.createdAt);
+        const latestDay = latestDate.toDateString();
+        const setsThatDay = sets.filter(set => {
+          const date = new Date(set.createdAt);
+          return !Number.isNaN(date.getTime()) && date.toDateString() === latestDay;
+        }).length;
+        return [{exerciseName: exercise ? exercise.name : exerciseId, latestDate, setsThatDay}];
+      }).sort((a, b) => b.latestDate - a.latestDate).slice(0, 10);
+      const summary = document.getElementById("recent-summary");
+      if (!recent.length) {
+        summary.innerHTML = '<div class="summary-empty">No logged sets yet.</div>';
+        return;
+      }
+      summary.innerHTML = `<div class="summary-row summary-header"><span>Exercise</span><span>Sets</span><span>Date</span></div>` + recent.map(item => {
+        const date = item.latestDate;
+        return `<div class="summary-row"><span class="summary-exercise">${escapeHTML(item.exerciseName)}</span><span>${item.setsThatDay} ${item.setsThatDay === 1 ? "set" : "sets"}</span><time>${escapeHTML(dayLabel(date))}</time></div>`;
+      }).join("");
+    }
+    function toggleDay(event) {
+      const button = event.currentTarget;
+      const collapsed = button.getAttribute("aria-expanded") === "true";
+      button.setAttribute("aria-expanded", String(!collapsed));
+      button.classList.toggle("collapsed", collapsed);
+      historyEl.querySelectorAll(`.set-row[data-group="${button.dataset.group}"]`).forEach(row => { row.hidden = collapsed; });
+    }
+    function dayLabel(date) {
+      if (Number.isNaN(date.getTime())) return "Date unknown";
+      const now = new Date();
+      if (date.toDateString() === now.toDateString()) return "Today";
+      const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+      if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+      return date.toLocaleDateString([], {weekday:"long", day:"numeric", month:"long", year:"numeric"});
+    }
+    function editSet(event) {
+      const set = (data[exerciseSelect.value] || []).find(item => item.id === event.currentTarget.dataset.id);
+      if (!set) return;
+      const weight = window.prompt("Weight (kg):", String(set.weight));
+      if (weight === null) return;
+      const reps = window.prompt("Reps:", String(set.reps));
+      if (reps === null) return;
+      const parsedWeight = Number(weight), parsedReps = Number(reps);
+      if (!Number.isFinite(parsedWeight) || parsedWeight < 1 || parsedWeight > 80 || !Number.isInteger(parsedReps) || parsedReps < 1 || parsedReps > 20) {
+        window.alert("Enter a weight from 1 to 80 kg and reps from 1 to 20."); return;
+      }
+      set.weight = parsedWeight; set.reps = parsedReps; saveData(); render(); applyLastSetDefaults();
+    }
+    function removeSet(event) {
+      const id = event.currentTarget.dataset.id;
+      const sets = data[exerciseSelect.value] || [];
+      const index = sets.findIndex(item => item.id === id);
+      if (index < 0 || !window.confirm("Remove this set?")) return;
+      sets.splice(index, 1); saveData(); render(); applyLastSetDefaults();
+    }
+    function rateSet(event) {
+      const button = event.currentTarget;
+      const sets = data[exerciseSelect.value] || [];
+      const set = sets.find(item => item.id === button.dataset.id);
+      if (!set) return;
+      set.rating = set.rating === button.dataset.rating ? null : button.dataset.rating;
+      saveData(); render();
+    }
+    function escapeHTML(value) { return String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char])); }
+    function startTimer() {
+      timerStartedAt = Date.now();
+      timerCard.classList.remove("hidden");
+      updateTodayCount();
+      if (timerInterval) clearInterval(timerInterval);
+      updateTimer(); timerInterval = setInterval(updateTimer, 1000);
+    }
+    function updateTodayCount() {
+      const today = new Date().toDateString();
+      const sets = Array.isArray(data[exerciseSelect.value]) ? data[exerciseSelect.value] : [];
+      const total = sets.filter(set => {
+        const date = new Date(set.createdAt);
+        return !Number.isNaN(date.getTime()) && date.toDateString() === today;
+      }).length;
+      document.getElementById("today-count").textContent = `${total} today`;
+    }
+    function updateTimer() {
+      if (timerStartedAt === null) return;
+      const seconds = Math.floor((Date.now() - timerStartedAt) / 1000);
+      timerValue.textContent = `${String(Math.floor(seconds / 60)).padStart(2,"0")}:${String(seconds % 60).padStart(2,"0")}`;
+    }
+    function resetTimer() { timerStartedAt = null; clearInterval(timerInterval); timerInterval = null; timerCard.classList.add("hidden"); timerValue.textContent = "00:00"; }
+    init();
+  </script>
+</body>
+</html>

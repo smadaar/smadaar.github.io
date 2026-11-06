@@ -90,7 +90,8 @@
       const phase=phases[phaseIndex]; phaseStarted=performance.now(); phaseDuration=phase.seconds*1000; lastCountdown=null;
       $("timer-display").className=`panel display ${phase.key}`;
       $("phase-label").textContent=phase.name;
-      $("round-label").textContent=phase.round?`Interval ${phase.round} of ${+intervalsSelect.value}`:phase.key==="complete"?"Session complete — nice work!":"Get ready for your session";
+      const roundLabel=$("round-label");
+      if(roundLabel) roundLabel.textContent=phase.round?`Interval ${phase.round} of ${+intervalsSelect.value}`:phase.key==="complete"?"Session complete — nice work!":"Get ready for your session";
       $("progress").style.width="0%"; transitionSound(phase.key);
       if(phase.key==="complete"){finish();return;}
       tick();
@@ -118,7 +119,7 @@
     }
     function reset() {
       running=false;paused=false;releaseWakeLock();clearTimeout(tickHandle);phaseIndex=0;lastCountdown=null;
-      $("timer-display").className="panel display";$("phase-label").textContent="Ready";$("clock").textContent="00:00";$("round-label").textContent="Choose your intervals and press go";$("progress").style.width="0%";
+      $("timer-display").className="panel display";$("phase-label").textContent="Ready";$("clock").textContent="00:00";const roundLabel=$("round-label");if(roundLabel)roundLabel.textContent="Choose your intervals and press go";$("progress").style.width="0%";
       $("go").disabled=false;$("go").textContent="Go";$("pause").disabled=true;$("pause").textContent="Pause";$("stop").disabled=true;
     }
     $("go").addEventListener("click",start);$("pause").addEventListener("click",pauseResume);$("stop").addEventListener("click",reset);

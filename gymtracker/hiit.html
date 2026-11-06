@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171a20">
+  <title>HIIT — Interval Timer</title>
+  <style>
+    :root{color-scheme:dark;--bg:#171a20;--panel:#20242c;--panel2:#272c35;--line:#373d48;--text:#f5f5f2;--muted:#a2a8b3;--lime:#c8f36b;--orange:#ff9b68;--blue:#7ecbff;--violet:#c6a4ff}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -15%,#2d3641 0,transparent 54%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,select{font:inherit}button{cursor:pointer}.wrap{width:min(100% - 36px,680px);margin:0 auto;padding:34px 0 48px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:42px}.brand{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:800;letter-spacing:.15em;text-transform:uppercase}.brand-icon{width:36px;height:36px;border-radius:12px;background:var(--lime);color:#181c18;display:grid;place-items:center;font-size:17px}.top-note{font-size:12px;color:var(--muted)}.hero{margin-bottom:25px}.kicker{color:var(--lime);font-size:11px;text-transform:uppercase;letter-spacing:.16em;font-weight:750}.hero h1{font-size:clamp(32px,7vw,46px);letter-spacing:-.06em;line-height:1.05;margin:8px 0}.hero p{color:var(--muted);margin:0;font-size:14px}.panel{border:1px solid var(--line);border-radius:18px;background:#20242ceF;box-shadow:0 20px 60px #0003}.settings{padding:22px}.settings-title{font-size:13px;color:var(--muted);font-weight:650;margin:0 0 15px}.fields{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}.field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#b6bdc7;font-weight:700;margin:0 0 7px}.field select{width:100%;height:46px;border-radius:10px;border:1px solid #414854;background:#292e37;color:var(--text);padding:0 12px;outline:none}.field select:focus-visible,button:focus-visible{outline:3px solid #b4df71;outline-offset:2px}.display{margin-top:16px;padding:27px 24px 23px;text-align:center;overflow:hidden;position:relative;min-height:312px;display:flex;flex-direction:column;align-items:center;justify-content:center}.display:before{content:"";position:absolute;width:280px;height:280px;border-radius:50%;border:1px solid #ffffff0c;top:45%;left:50%;transform:translate(-50%,-50%);pointer-events:none}.display:after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;border:1px solid #ffffff0b;top:45%;left:50%;transform:translate(-50%,-50%);pointer-events:none}.phase{position:relative;z-index:1;text-transform:uppercase;letter-spacing:.19em;font-size:12px;font-weight:800;color:var(--lime);margin-bottom:10px}.clock{position:relative;z-index:1;font-variant-numeric:tabular-nums;font-size:clamp(72px,17vw,112px);letter-spacing:-.07em;line-height:1;font-weight:740}.round{position:relative;z-index:1;color:var(--muted);font-size:13px;margin-top:10px}.progress{position:relative;z-index:1;width:min(330px,90%);height:5px;border-radius:9px;background:#ffffff18;margin-top:20px;overflow:hidden}.progress-fill{height:100%;width:0;background:var(--lime);border-radius:inherit;transition:width .15s linear}.controls{position:relative;z-index:1;display:flex;gap:10px;margin-top:23px}.go{min-width:144px;background:var(--lime);border:0;border-radius:10px;color:#1a1e17;font-weight:800;padding:12px 24px}.go:hover{background:#d5ff86}.secondary{background:#333943;color:var(--text);border:1px solid #4b515c;border-radius:10px;padding:11px 17px;font-weight:650}.secondary:hover{background:#3b424d}.secondary:disabled{opacity:.4;cursor:not-allowed}.plan{display:flex;gap:6px;align-items:center;margin-top:20px;justify-content:center;flex-wrap:wrap}.plan-chip{font-size:10px;color:#c0c6cf;border:1px solid var(--line);padding:5px 9px;border-radius:99px}.plan-chip b{color:var(--text);font-weight:700}.plan-arrow{color:#68707a;font-size:12px}.hint{text-align:center;color:#828995;font-size:11px;margin:19px 0 0}.phase.work .phase{color:var(--orange)}.phase.rest .phase{color:var(--blue)}.phase.warmdown .phase{color:var(--violet)}
+    @media(max-width:480px){.wrap{padding-top:22px}.top{margin-bottom:34px}.settings{padding:18px}.fields{gap:11px}.display{min-height:300px;padding:24px 16px}.controls{width:100%}.controls button{flex:1}.plan{gap:5px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top"><div class="brand"><span class="brand-icon">↗</span> HIIT timer</div><span class="top-note">Move with intent.</span></header>
+    
+    <section class="panel settings" aria-label="Workout settings">
+      <p class="settings-title">Your session</p>
+      <div class="fields">
+        <div class="field"><label for="warmup">Warmup</label><select id="warmup"></select></div>
+        <div class="field"><label for="intervals">Number of intervals</label><select id="intervals"></select></div>
+        <div class="field"><label for="work">Work</label><select id="work"></select></div>
+        <div class="field"><label for="rest">Rest</label><select id="rest"></select></div>
+        <div class="field"><label for="warmdown">Warm down</label><select id="warmdown"></select></div>
+      </div>
+    </section>
+    <section class="panel display" id="timer-display" aria-live="polite">
+      <div class="phase" id="phase-label">Ready</div>
+      <div class="clock" id="clock">00:00</div>
+      <div class="progress"><div class="progress-fill" id="progress"></div></div>
+      <div class="controls"><button class="go" id="go" type="button">Go</button><button class="secondary" id="pause" type="button" disabled>Pause</button><button class="secondary" id="stop" type="button" disabled>Reset</button></div>
+      <div class="plan" id="plan"></div>
+    </section>
+    <p class="hint">Sound is generated by your device. Turn up your volume before starting.</p>
+  </main>
+  <script>
+    const $ = id => document.getElementById(id);
+    const warmupSelect = $("warmup"), intervalsSelect = $("intervals"), workSelect = $("work"), restSelect = $("rest"), warmdownSelect = $("warmdown");
+    let phases = [], phaseIndex = 0, phaseStarted = 0, phaseDuration = 0, running = false, paused = false, pauseAt = 0, tickHandle = null, lastCountdown = null, audio = null, wakeLock = null;
+    function options(select, entries, selected) {
+      select.innerHTML = entries.map(([value,label]) => `<option value="${value}" ${value === selected ? "selected" : ""}>${label}</option>`).join("");
+    }
+    options(warmupSelect, [[0,"Off"],[10,"10 sec"], ...Array.from({length:30},(_,i)=>[(i+1)*30, formatDuration((i+1)*30)])], 10);
+    options(warmdownSelect, [[0,"Off"], ...Array.from({length:30},(_,i)=>[(i+1)*30, formatDuration((i+1)*30)])], 120);
+    options(intervalsSelect, Array.from({length:20},(_,i)=>[i+1,String(i+1)]), 8);
+    options(workSelect, Array.from({length:60},(_,i)=>[i+1,`${i+1} sec`]), 20);
+    options(restSelect, Array.from({length:60},(_,i)=>[i+1,`${i+1} sec`]), 10);
+    function formatDuration(seconds) { const m=Math.floor(seconds/60),s=seconds%60; return `${m ? `${m} min` : ""}${m&&s?" ":""}${s?`${s} sec`:""}`; }
+    function updatePlan() {
+      const items=[]; if (+warmupSelect.value) items.push(["Warmup",formatDuration(+warmupSelect.value)]);
+      items.push(["Work",`${workSelect.value}s`],["Rest",`${restSelect.value}s`],["×",intervalsSelect.value],["Warm down",+warmdownSelect.value?formatDuration(+warmdownSelect.value):"Off"]);
+      $("plan").innerHTML=items.map((x,i)=>`${i?'<span class="plan-arrow">·</span>':''}<span class="plan-chip"><b>${x[0]}</b> ${x[1]}</span>`).join("");
+    }
+    [warmupSelect,warmdownSelect,intervalsSelect,workSelect,restSelect].forEach(el=>el.addEventListener("change",updatePlan)); updatePlan();
+    function makePhases() {
+      const list=[]; const warm=+warmupSelect.value, down=+warmdownSelect.value, count=+intervalsSelect.value;
+      if(warm) list.push({name:"Warmup",key:"warmup",seconds:warm});
+      for(let i=1;i<=count;i++) { list.push({name:"Work",key:"work",seconds:+workSelect.value,round:i}); if(i<count) list.push({name:"Rest",key:"rest",seconds:+restSelect.value,round:i}); }
+      if(down) list.push({name:"Warm down",key:"warmdown",seconds:down});
+      list.push({name:"Complete",key:"complete",seconds:0}); return list;
+    }
+    function tone(frequency=880,duration=.12,type="sine",volume=.16,delay=0) {
+      try {
+        audio ||= new (window.AudioContext||window.webkitAudioContext)();
+        if(audio.state==="suspended") audio.resume();
+        const osc=audio.createOscillator(), gain=audio.createGain(), start=audio.currentTime+delay;
+        osc.type=type; osc.frequency.setValueAtTime(frequency,start); gain.gain.setValueAtTime(volume,start); gain.gain.exponentialRampToValueAtTime(.001,start+duration);
+        osc.connect(gain); gain.connect(audio.destination); osc.start(start); osc.stop(start+duration);
+      } catch {}
+    }
+    function transitionSound(key) {
+      const f={warmup:523.25,work:880,rest:440,warmdown:659.25,complete:784}[key]||660;
+      tone(f,.22,"sine",.22); if(key==="complete") tone(1046,.35,"sine",.18,.25);
+    }
+    function countdownSound(n) { tone(n===1?1046:784,.09,"sine",.13); }
+    async function requestWakeLock() {
+      if (!("wakeLock" in navigator) || !running || paused || document.visibilityState !== "visible") return;
+      try {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => { wakeLock = null; });
+      } catch { wakeLock = null; }
+    }
+    async function releaseWakeLock() {
+      if (!wakeLock) return;
+      const lock = wakeLock; wakeLock = null;
+      try { await lock.release(); } catch {}
+    }
+    function enterPhase() {
+      const phase=phases[phaseIndex]; phaseStarted=performance.now(); phaseDuration=phase.seconds*1000; lastCountdown=null;
+      $("timer-display").className=`panel display ${phase.key}`;
+      $("phase-label").textContent=phase.name;
+      $("round-label").textContent=phase.round?`Interval ${phase.round} of ${+intervalsSelect.value}`:phase.key==="complete"?"Session complete — nice work!":"Get ready for your session";
+      $("progress").style.width="0%"; transitionSound(phase.key);
+      if(phase.key==="complete"){finish();return;}
+      tick();
+    }
+    function tick() {
+      if(!running||paused)return;
+      const elapsed=performance.now()-phaseStarted, remaining=Math.max(0,phaseDuration-elapsed), seconds=Math.ceil(remaining/1000);
+      $("clock").textContent=`${String(Math.floor(seconds/60)).padStart(2,"0")}:${String(seconds%60).padStart(2,"0")}`;
+      $("progress").style.width=`${Math.min(100,elapsed/phaseDuration*100)}%`;
+      if(remaining>0&&remaining<=3000&&seconds!==lastCountdown){lastCountdown=seconds;countdownSound(seconds);}
+      if(remaining<=0){phaseIndex++;enterPhase();return;}
+      tickHandle=setTimeout(tick,Math.min(100,remaining));
+    }
+    function start() {
+      if(running)return;
+      phases=makePhases();phaseIndex=0;running=true;paused=false;requestWakeLock();$("go").disabled=true;$("pause").disabled=false;$("stop").disabled=false;$("pause").textContent="Pause";enterPhase();
+    }
+    function finish() {
+      running=false;paused=false;releaseWakeLock();clearTimeout(tickHandle);$("clock").textContent="00:00";$("progress").style.width="100%";$("go").disabled=false;$("go").textContent="Go again";$("pause").disabled=true;$("stop").disabled=false;
+    }
+    function pauseResume() {
+      if(!running)return;
+      if(!paused){paused=true;pauseAt=performance.now();clearTimeout(tickHandle);releaseWakeLock();$("pause").textContent="Resume";}
+      else {phaseStarted+=performance.now()-pauseAt;paused=false;requestWakeLock();$("pause").textContent="Pause";tick();}
+    }
+    function reset() {
+      running=false;paused=false;releaseWakeLock();clearTimeout(tickHandle);phaseIndex=0;lastCountdown=null;
+      $("timer-display").className="panel display";$("phase-label").textContent="Ready";$("clock").textContent="00:00";$("round-label").textContent="Choose your intervals and press go";$("progress").style.width="0%";
+      $("go").disabled=false;$("go").textContent="Go";$("pause").disabled=true;$("pause").textContent="Pause";$("stop").disabled=true;
+    }
+    $("go").addEventListener("click",start);$("pause").addEventListener("click",pauseResume);$("stop").addEventListener("click",reset);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && running && !paused) requestWakeLock();
+    });
+  </script>
+</body>
+</html>
